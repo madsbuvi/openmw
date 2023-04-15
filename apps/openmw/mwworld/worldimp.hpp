@@ -11,6 +11,8 @@
 
 #include "../mwbase/world.hpp"
 
+#include "../mwrender/renderingmanager.hpp"
+
 #include "contentloader.hpp"
 #include "esmstore.hpp"
 #include "globals.hpp"
@@ -78,6 +80,7 @@ namespace MWWorld
     class WeatherManager;
     class Player;
     class ProjectileManager;
+    class WeaponPoseTrackingListener;
 
     /// \brief The game world and its visual representation
 
@@ -137,6 +140,10 @@ namespace MWWorld
         uint32_t mRandomSeed{};
         bool mIdsRebuilt{};
 
+//## VR_PATCH BEGIN
+        std::unique_ptr<WeaponPoseTrackingListener> mWeaponPoseTrackingListener;
+
+//## VR_PATCH END
         // not implemented
         World(const World&) = delete;
         World& operator=(const World&) = delete;
@@ -180,7 +187,9 @@ namespace MWWorld
             Loading::Listener* listener);
 
         float feetToGameUnits(float feet);
-        float getActivationDistancePlusTelekinesis();
+//## VR_PATCH BEGIN
+        float getActivationDistancePlusTelekinesis() override;
+//## VR_PATCH END
 
         MWWorld::ConstPtr getClosestMarker(const MWWorld::ConstPtr& ptr, const ESM::RefId& id);
         MWWorld::ConstPtr getClosestMarkerFromExteriorPosition(const osg::Vec3f& worldPos, const ESM::RefId& id);
@@ -202,7 +211,7 @@ namespace MWWorld
 
         // Must be called after `loadData`.
         void init(osgViewer::Viewer* viewer, osg::ref_ptr<osg::Group> rootNode, SceneUtil::WorkQueue* workQueue,
-            SceneUtil::UnrefQueue& unrefQueue);
+            SceneUtil::UnrefQueue& unrefQueue, std::unique_ptr<MWRender::Camera> camera);
 
         virtual ~World();
 
@@ -671,6 +680,28 @@ namespace MWWorld
         DateTimeManager* getTimeManager() override { return mTimeManager.get(); }
 
         void setActorActive(const MWWorld::Ptr& ptr, bool value) override;
+
+//## VR_PATCH BEGIN
+        /// Intersects the scene from the origin, in the specified orientation and distance, storing the %result in the
+        /// result structure.
+        /// @Return distance to the target object, or -1 if no object was targeted / in range
+        float getTargetObject(MWRender::RayResult& result, const osg::Vec3f& origin, const osg::Quat& orientation,
+            float maxDistance, bool ignorePlayer, bool ignore3DUI) override;
+
+        MWWorld::Ptr placeObject(const MWWorld::ConstPtr& object, const MWRender::RayResult& ray, int amount) override;
+        ///< copy and place an object into the gameworld based on the given intersection
+        /// @param object
+        /// @param world position to place object
+        /// @param number of objects to place
+
+        /// @Return ESM::Weapon::Type enum describing the type of weapon currently drawn by the player.
+        int getActiveWeaponType(void) override;
+
+        void enableVRPointer(bool left, bool right) override;
+
+        void getWeaponPose(Stereo::Pose& pose) override;
+        void setWeaponPosePath(int64_t path) override;
+//## VR_PATCH END
     };
 }
 

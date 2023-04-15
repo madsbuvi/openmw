@@ -8,5 +8,6 @@ In order to use OpenMW, you must install both the engine and the game files for 
 	:maxdepth: 2
 
 	install-openmw
+	install-openmw-vr
 	install-game-files
 	common-problems

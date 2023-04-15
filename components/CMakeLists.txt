@@ -91,6 +91,7 @@ add_component_dir (settings
     categories/stereoview
     categories/terrain
     categories/video
+    categories/vr
     categories/water
     categories/windows
     gyroscopeaxis
@@ -295,7 +296,8 @@ add_component_dir (esm4
 )
 
 add_component_dir (misc
-    barrier budgetmeasurement color compression constants convert coordinateconverter display endianness float16 frameratelimiter
+// MERGETODO: Duplicates?
+    barrier budgetmeasurement callbackmanager color compression constants convert coordinateconverter display endianness float16 frameratelimiter
     guarded math mathutil messageformatparser notnullptr objectpool osgpluginchecker osguservalues progressreporter resourcehelpers
     rng strongtypedef thread timeconvert timer tuplehelpers tuplemeta utf8stream weakcache windows
     )
@@ -353,7 +355,7 @@ add_component_dir (myguiplatform
     )
 
 add_component_dir (widgets
-    box fontwrapper imagebutton tags list numericeditbox sharedstatebutton windowcaption widgets
+    box fontwrapper imagebutton tags list numericeditbox sharedstatebutton virtualkeyboardmanager windowcaption widgets
     )
 
 add_component_dir (fontloader
@@ -510,6 +512,40 @@ else ()
     add_component_dir(platform
         file.stdio
         )
+endif()
+
+if(BUILD_OPENMW_VR)
+    add_component_dir(vr
+        actionmanager
+        actionset
+        constants
+        directx
+        frame
+        layer
+        rendertoswapchain
+        session
+        space
+        swapchain
+        trackinglistener
+        trackingmanager
+        trackingsource
+        trackingtransform
+        viewer
+        vr
+    )
+    add_component_dir(xr
+        action
+        actionset
+        debug
+        extensions
+        input
+        instance
+        platform
+        session
+        swapchain
+        tracking
+        typeconversion
+    )
 endif()
 
 add_component_dir(testing
@@ -719,4 +755,15 @@ if (MSVC AND PRECOMPILE_HEADERS_WITH_MSVC)
 
         <boost/program_options/options_description.hpp>
     )
+endif()
+  
+if(BUILD_OPENMW_VR)
+    target_link_libraries(components openxr_loader)
+
+    # Preprocessor variables used to control code paths to vr code
+    if (WIN32)
+        target_compile_options(components PUBLIC -DXR_USE_GRAPHICS_API_OPENGL -DXR_USE_GRAPHICS_API_D3D11 -DXR_USE_PLATFORM_WIN32)
+    elseif(UNIX)
+        target_compile_options(components PUBLIC -DXR_USE_GRAPHICS_API_OPENGL -DXR_USE_PLATFORM_XLIB)
+    endif()
 endif()
