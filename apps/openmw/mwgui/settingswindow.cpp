@@ -30,6 +30,8 @@
 #include <components/vfs/manager.hpp>
 #include <components/widgets/sharedstatebutton.hpp>
 
+#include <components/vr/vr.hpp>
+
 #include "../mwbase/environment.hpp"
 #include "../mwbase/inputmanager.hpp"
 #include "../mwbase/mechanicsmanager.hpp"
@@ -39,6 +41,14 @@
 
 #include "confirmationdialog.hpp"
 #include "ustring.hpp"
+
+#ifdef USE_OPENXR
+#include "../mwvr/vrgui.hpp"
+#include "../mwvr/vrinputmanager.hpp"
+#include <components/vr/session.hpp>
+#include <components/vr/trackingmanager.hpp>
+#include <components/vr/viewer.hpp>
+#endif
 
 namespace
 {
@@ -244,7 +254,11 @@ namespace MWGui
     }
 
     SettingsWindow::SettingsWindow()
-        : WindowBase("openmw_settings_window.layout")
+        : // #ifdef USE_OPENXR
+        WindowBase("openmw_settings_window_vr.layout")
+        // #else
+        // WindowBase("openmw_settings_window.layout")
+        // #endif
         , mKeyboardMode(true)
         , mCurrentPage(-1)
     {
@@ -284,6 +298,19 @@ namespace MWGui
         getWidget(mScriptView, "ScriptView");
         getWidget(mScriptAdapter, "ScriptAdapter");
         getWidget(mScriptDisabled, "ScriptDisabled");
+
+        // MWGui::ScrollWindow;
+
+        if (VR::getVR())
+        {
+            getWidget(mVRMirrorTextureEye, "VRMirrorTextureEye");
+            getWidget(mVRHudPosition, "VRHudPosition");
+            getWidget(mVRTooltipPosition, "VRTooltipPosition");
+            getWidget(mVRSnapAngle, "VRSnapAngle");
+            getWidget(mVRThumbstickUp, "VRThumbstickUp");
+            getWidget(mVRThumbstickDown, "VRThumbstickDown");
+            getWidget(mVRHeightCalibButton, "VRHeighCalib");
+        }
 
 #ifndef WIN32
         // hide gamma controls since it currently does not work under Linux
@@ -333,6 +360,23 @@ namespace MWGui
         mSecondaryLanguage->eventComboChangePosition
             += MyGUI::newDelegate(this, &SettingsWindow::onSecondaryLanguageChanged);
 
+        if (VR::getVR())
+        {
+            mVRMirrorTextureEye->eventComboChangePosition
+                += MyGUI::newDelegate(this, &SettingsWindow::onVRMirrorTextureEyeChanged);
+            mVRHudPosition->eventComboChangePosition
+                += MyGUI::newDelegate(this, &SettingsWindow::onVRHudPositionChanged);
+            mVRTooltipPosition->eventComboChangePosition
+                += MyGUI::newDelegate(this, &SettingsWindow::onVRTooltipPositionChanged);
+            mVRSnapAngle->eventComboChangePosition += MyGUI::newDelegate(this, &SettingsWindow::onVRSnapAngleChanged);
+            mVRThumbstickUp->eventComboChangePosition
+                += MyGUI::newDelegate(this, &SettingsWindow::onVRThumbstickUpChanged);
+            mVRThumbstickDown->eventComboChangePosition
+                += MyGUI::newDelegate(this, &SettingsWindow::onVRThumbstickDownChanged);
+            mVRHeightCalibButton->eventMouseButtonClick
+                += MyGUI::newDelegate(this, &SettingsWindow::onVRHeightCalibButtonClicked);
+        }
+
         computeMinimumWindowSize();
 
         center();
@@ -366,6 +410,48 @@ namespace MWGui
 
         const std::string& tmip = Settings::Manager::getString("texture mipmap", "General");
         mTextureFilteringButton->setCaptionWithReplacing(textureMipmappingToStr(tmip));
+
+        if (VR::getVR())
+        {
+            std::string mirrorTextureEye = Settings::Manager::getString("mirror texture eye", "VR");
+            for (unsigned i = 0; i < mVRMirrorTextureEye->getItemCount(); i++)
+                if (Misc::StringUtils::ciEqual<std::string, std::string>(
+                        mirrorTextureEye, mVRMirrorTextureEye->getItemNameAt(i)))
+                    mVRMirrorTextureEye->setIndexSelected(i);
+
+            std::string hudPosition = Settings::Manager::getString("hud position", "VR");
+            for (unsigned i = 0; i < mVRHudPosition->getItemCount(); i++)
+                if (Misc::StringUtils::ciEqual<std::string, std::string>(hudPosition, mVRHudPosition->getItemNameAt(i)))
+                    mVRHudPosition->setIndexSelected(i);
+
+            std::string tooltipPosition = Settings::Manager::getString("tooltip position", "VR");
+            for (unsigned i = 0; i < mVRTooltipPosition->getItemCount(); i++)
+                if (Misc::StringUtils::ciEqual<std::string, std::string>(
+                        tooltipPosition, mVRTooltipPosition->getItemNameAt(i)))
+                    mVRTooltipPosition->setIndexSelected(i);
+
+            double snapAngle = Settings::Manager::getDouble("snap angle", "VR");
+            for (unsigned i = 0; i < mVRSnapAngle->getItemCount(); i++)
+            {
+                std::string item = mVRSnapAngle->getItemNameAt(i);
+                double itemSnapAngle = 0.;
+                std::istringstream(item) >> itemSnapAngle;
+                if (itemSnapAngle == snapAngle)
+                    mVRSnapAngle->setIndexSelected(i);
+            }
+
+            std::string axisUpPosition = Settings::Manager::getString("utility axis up action", "VR");
+            for (unsigned i = 0; i < mVRThumbstickUp->getItemCount(); i++)
+                if (Misc::StringUtils::ciEqual<std::string, std::string>(
+                        axisUpPosition, mVRThumbstickUp->getItemNameAt(i)))
+                    mVRThumbstickUp->setIndexSelected(i);
+
+            std::string axisDownPosition = Settings::Manager::getString("utility axis down action", "VR");
+            for (unsigned i = 0; i < mVRThumbstickDown->getItemCount(); i++)
+                if (Misc::StringUtils::ciEqual<std::string, std::string>(
+                        axisDownPosition, mVRThumbstickDown->getItemNameAt(i)))
+                    mVRThumbstickDown->setIndexSelected(i);
+        }
 
         int waterTextureSize = Settings::Manager::getInt("rtt size", "Water");
         if (waterTextureSize >= 512)
@@ -505,6 +591,66 @@ namespace MWGui
                 break;
             }
         }
+    }
+
+    void SettingsWindow::onVRMirrorTextureEyeChanged(MyGUI::ComboBox* _sender, size_t pos)
+    {
+        std::string settingString = _sender->getItemNameAt(pos);
+        settingString = Misc::StringUtils::lowerCase(settingString);
+        Settings::Manager::setString("mirror texture eye", "VR", settingString);
+        apply();
+    }
+
+    void SettingsWindow::onVRHudPositionChanged(MyGUI::ComboBox* _sender, size_t pos)
+    {
+        std::string settingString = _sender->getItemNameAt(pos);
+        settingString = Misc::StringUtils::lowerCase(settingString);
+        Settings::Manager::setString("hud position", "VR", settingString);
+        apply();
+    }
+
+    void SettingsWindow::onVRTooltipPositionChanged(MyGUI::ComboBox* _sender, size_t pos)
+    {
+        std::string settingString = _sender->getItemNameAt(pos);
+        settingString = Misc::StringUtils::lowerCase(settingString);
+        Settings::Manager::setString("tooltip position", "VR", settingString);
+        apply();
+    }
+
+    void SettingsWindow::onVRSnapAngleChanged(MyGUI::ComboBox* _sender, size_t pos)
+    {
+        std::string settingString = _sender->getItemNameAt(pos);
+        settingString = Misc::StringUtils::lowerCase(settingString);
+        Settings::Manager::setString("snap angle", "VR", settingString);
+        apply();
+    }
+
+    void SettingsWindow::onVRThumbstickUpChanged(MyGUI::ComboBox* _sender, size_t pos)
+    {
+        std::string settingString = _sender->getItemNameAt(pos);
+        settingString = Misc::StringUtils::lowerCase(settingString);
+        Settings::Manager::setString("utility axis up action", "VR", settingString);
+        apply();
+    }
+
+    void SettingsWindow::onVRThumbstickDownChanged(MyGUI::ComboBox* _sender, size_t pos)
+    {
+        std::string settingString = _sender->getItemNameAt(pos);
+        settingString = Misc::StringUtils::lowerCase(settingString);
+        Settings::Manager::setString("utility axis down action", "VR", settingString);
+        apply();
+    }
+
+    void SettingsWindow::onVRHeightCalibButtonClicked(MyGUI::Widget* _sender)
+    {
+#ifdef USE_OPENXR
+        auto* im = dynamic_cast<MWVR::VRInputManager*>(MWBase::Environment::get().getInputManager().get());
+        if (im)
+        {
+            im->calibratePlayerHeight();
+            apply();
+        }
+#endif
     }
 
     void SettingsWindow::onWaterTextureSizeChanged(MyGUI::ComboBox* _sender, size_t pos)
@@ -737,6 +883,15 @@ namespace MWGui
         MWBase::Environment::get().getWindowManager()->processChangedSettings(changed);
         MWBase::Environment::get().getInputManager()->processChangedSettings(changed);
         MWBase::Environment::get().getMechanicsManager()->processChangedSettings(changed);
+#ifdef USE_OPENXR
+        if (VR::getVR())
+        {
+            VR::Session::instance().processChangedSettings(changed);
+            VR::TrackingManager::instance().processChangedSettings(changed);
+            VR::Viewer::instance().processChangedSettings(changed);
+            MWVR::VRGUIManager::instance().processChangedSettings(changed);
+        }
+#endif
         Settings::Manager::resetPendingChanges();
     }
 

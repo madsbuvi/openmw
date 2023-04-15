@@ -22,6 +22,7 @@
 #include "../mwworld/esmstore.hpp"
 
 #include <MyGUI_Macros.h>
+#include <components/vr/vr.hpp>
 
 #include "inventoryitemmodel.hpp"
 #include "itemview.hpp"
@@ -29,6 +30,10 @@
 #include "sortfilteritemmodel.hpp"
 #include "ustring.hpp"
 #include "widgets.hpp"
+
+#ifdef USE_OPENXR
+#include "../mwvr/vrlistbox.hpp"
+#endif
 
 namespace MWGui
 {
@@ -38,6 +43,9 @@ namespace MWGui
         , mModel(nullptr)
         , mSortModel(nullptr)
         , mAlchemy(std::make_unique<MWMechanics::Alchemy>())
+        , mFilterCombo(nullptr)
+        , mFilterEdit(nullptr)
+        , mFilterButton(nullptr)
         , mApparatus(4)
         , mIngredients(4)
     {
@@ -57,8 +65,31 @@ namespace MWGui
         getWidget(mDecreaseButton, "DecreaseButton");
         getWidget(mNameEdit, "NameEdit");
         getWidget(mItemView, "ItemView");
-        getWidget(mFilterValue, "FilterValue");
+        getWidget(mFilterCombo, "FilterValue");
         getWidget(mFilterType, "FilterType");
+        getWidget(mFilterEdit, "FilterEdit");
+        getWidget(mFilterButton, "FilterButton");
+
+        if (VR::getVR())
+        {
+#ifdef USE_OPENXR
+            mFilterListBox = new MWVR::VrListBox();
+#endif
+            mFilterCombo->setVisible(false);
+            mFilterCombo->setUserString("Hidden", "true");
+        }
+        else
+        {
+            mFilterButton->setVisible(false);
+            mFilterButton->setUserString("Hidden", "true");
+            mFilterEdit->setVisible(false);
+            mFilterEdit->setUserString("Hidden", "true");
+        }
+
+        mFilterButton->eventMouseButtonClick += MyGUI::newDelegate(this, &AlchemyWindow::onFilterButtonClicked);
+        mFilterEdit->eventEditTextChange += MyGUI::newDelegate(this, &AlchemyWindow::onFilterEdited);
+        mFilterCombo->eventComboChangePosition += MyGUI::newDelegate(this, &AlchemyWindow::onFilterChanged);
+        mFilterCombo->eventEditTextChange += MyGUI::newDelegate(this, &AlchemyWindow::onFilterEdited);
 
         mBrewCountEdit->eventValueChanged += MyGUI::newDelegate(this, &AlchemyWindow::onCountValueChanged);
         mBrewCountEdit->eventEditSelectAccept += MyGUI::newDelegate(this, &AlchemyWindow::onAccept);
@@ -81,8 +112,7 @@ namespace MWGui
         mCancelButton->eventMouseButtonClick += MyGUI::newDelegate(this, &AlchemyWindow::onCancelButtonClicked);
 
         mNameEdit->eventEditSelectAccept += MyGUI::newDelegate(this, &AlchemyWindow::onAccept);
-        mFilterValue->eventComboChangePosition += MyGUI::newDelegate(this, &AlchemyWindow::onFilterChanged);
-        mFilterValue->eventEditTextChange += MyGUI::newDelegate(this, &AlchemyWindow::onFilterEdited);
+
         mFilterType->eventMouseButtonClick += MyGUI::newDelegate(this, &AlchemyWindow::switchFilterType);
 
         center();
@@ -163,7 +193,8 @@ namespace MWGui
         else
             mCurrentFilter = FilterType::ByEffect;
         updateFilters();
-        mFilterValue->clearIndexSelected();
+        mFilterCombo->clearIndexSelected();
+        mFilterEdit->setCaption("");
         updateFilters();
     }
 
@@ -185,43 +216,52 @@ namespace MWGui
         }
         mSortModel->setNameFilter({});
         mSortModel->setEffectFilter({});
-        mFilterValue->clearIndexSelected();
+        mFilterCombo->clearIndexSelected();
+        mFilterEdit->setCaption("");
         updateFilters();
         mItemView->update();
     }
 
     void AlchemyWindow::updateFilters()
     {
-        std::set<std::string> itemNames, itemEffects;
+        mItemEffects.clear();
+        mItemNames.clear();
         for (size_t i = 0; i < mModel->getItemCount(); ++i)
         {
             MWWorld::Ptr item = mModel->getItem(i).mBase;
             if (item.getType() != ESM::Ingredient::sRecordId)
                 continue;
 
-            itemNames.emplace(item.getClass().getName(item));
+            mItemNames.emplace(item.getClass().getName(item));
 
             MWWorld::Ptr player = MWBase::Environment::get().getWorld()->getPlayerPtr();
             auto const alchemySkill = player.getClass().getSkill(player, ESM::Skill::Alchemy);
 
             auto const effects = MWMechanics::Alchemy::effectsDescription(item, alchemySkill);
-            itemEffects.insert(effects.begin(), effects.end());
+            mItemEffects.insert(effects.begin(), effects.end());
         }
 
-        mFilterValue->removeAllItems();
-        auto const addItems = [&](auto const& container) {
-            for (auto const& item : container)
-                mFilterValue->addItem(item);
-        };
+        mFilterCombo->removeAllItems();
+        for (auto const& item : items())
+        {
+            mFilterCombo->addItem(item);
+        }
+    }
+
+    const std::set<std::string>& AlchemyWindow::items()
+    {
         switch (mCurrentFilter)
         {
             case FilterType::ByName:
-                addItems(itemNames);
+                return mItemNames;
                 break;
             case FilterType::ByEffect:
-                addItems(itemEffects);
+                return mItemEffects;
                 break;
         }
+
+        // Can't be reached. Satisfies warnings.
+        return mItemNames;
     }
 
     void AlchemyWindow::applyFilter(const std::string& filter)
@@ -249,6 +289,20 @@ namespace MWGui
     void AlchemyWindow::onFilterEdited(MyGUI::EditBox* _sender)
     {
         applyFilter(_sender->getCaption());
+    }
+
+    void AlchemyWindow::onFilterButtonClicked(MyGUI::Widget* _sender)
+    {
+#ifdef USE_OPENXR
+        mFilterListBox->open(mFilterCombo, [this](std::size_t index) {
+            if (index != MyGUI::ITEM_NONE)
+            {
+                auto filter = mFilterCombo->getItemNameAt(index);
+                mFilterEdit->setCaption(filter);
+                applyFilter(filter);
+            }
+        });
+#endif
     }
 
     void AlchemyWindow::onOpen()

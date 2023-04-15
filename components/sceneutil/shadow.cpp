@@ -95,6 +95,7 @@ namespace SceneUtil
         osg::ref_ptr<osg::Texture> fakeShadowMapTexture = new osg::Texture2D(fakeShadowMapImage);
         fakeShadowMapTexture->setShadowComparison(true);
         fakeShadowMapTexture->setShadowCompareFunc(osg::Texture::ShadowCompareFunc::ALWAYS);
+        fakeShadowMapTexture->setName("fakeShadowMapTexture");
         for (int i = baseShadowTextureUnit; i < baseShadowTextureUnit + numberOfShadowMapsPerLight; ++i)
         {
             stateset->setTextureAttributeAndModes(i, fakeShadowMapTexture,
@@ -115,7 +116,9 @@ namespace SceneUtil
         , mIndoorShadowCastingMask(indoorShadowCastingMask)
     {
         mShadowedScene->setShadowTechnique(mShadowTechnique);
-        Stereo::Manager::instance().setShadowTechnique(mShadowTechnique);
+
+        if (Stereo::getStereo())
+            Stereo::Manager::instance().setShadowTechnique(mShadowTechnique);
 
         mShadowedScene->addChild(sceneRoot);
         rootNode->addChild(mShadowedScene);
@@ -132,7 +135,8 @@ namespace SceneUtil
 
     ShadowManager::~ShadowManager()
     {
-        Stereo::Manager::instance().setShadowTechnique(nullptr);
+        if (Stereo::getStereo())
+            Stereo::Manager::instance().setShadowTechnique(nullptr);
     }
 
     Shader::ShaderManager::DefineMap ShadowManager::getShadowDefines()

@@ -31,6 +31,7 @@
 #include <components/sceneutil/positionattitudetransform.hpp>
 
 #include "../mwrender/animation.hpp"
+#include "../mwrender/npcanimation.hpp"
 
 #include "../mwbase/environment.hpp"
 #include "../mwbase/mechanicsmanager.hpp"
@@ -52,6 +53,10 @@
 #include "security.hpp"
 #include "spellcasting.hpp"
 #include "weapontype.hpp"
+
+#ifdef USE_OPENXR
+#include "../mwvr/vrutil.hpp"
+#endif
 
 namespace
 {
@@ -1076,6 +1081,7 @@ namespace MWMechanics
                     attackType = ESM::Weapon::AT_Thrust;
             }
             else if (action == "chop hit")
+                // MERGETODO: old else was: charClass.hit(mPtr, mAttackStrength, -1); vr had added the -1. Make sure this is still equivalent
                 attackType = ESM::Weapon::AT_Chop;
             else if (action == "slash hit")
                 attackType = ESM::Weapon::AT_Slash;
@@ -1609,6 +1615,12 @@ namespace MWMechanics
                 {
                     std::string startKey = "start";
                     std::string stopKey = "stop";
+                    std::string resultMessage, resultSound;
+#ifdef USE_OPENXR
+// MERGETODO: upstream removed or moved the target part of this
+                    MWWorld::Ptr target = MWVR::Util::getWeaponTarget().first;
+#else
+#endif
 
                     if (mWeaponType != ESM::Weapon::PickProbe && !isRandomAttackAnimation(mCurrentWeapon))
                     {
@@ -2400,6 +2412,18 @@ namespace MWMechanics
         mSkipAnim = false;
 
         mAnimation->enableHeadAnimation(cls.isActor() && !cls.getCreatureStats(mPtr).isDead());
+
+#ifdef USE_OPENXR
+        if (isPlayer)
+        {
+            auto disabled = MWBase::Environment::get().getWorld()->getPlayer().isDisabled();
+            auto animation = static_cast<MWRender::NpcAnimation*>(mAnimation);
+            if (disabled)
+                animation->setViewMode(MWRender::NpcAnimation::VM_VRNormal);
+            else
+                animation->setViewMode(MWRender::NpcAnimation::VM_VRFirstPerson);
+        }
+#endif
     }
 
     void CharacterController::persistAnimationState() const

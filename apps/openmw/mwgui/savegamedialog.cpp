@@ -22,6 +22,7 @@
 #include <components/files/conversion.hpp>
 #include <components/files/memorystream.hpp>
 #include <components/misc/timeconvert.hpp>
+#include <components/vr/vr.hpp>
 
 #include <components/esm3/loadclas.hpp>
 
@@ -32,6 +33,10 @@
 #include "../mwworld/esmstore.hpp"
 
 #include "../mwstate/character.hpp"
+
+#ifdef USE_OPENXR
+#include "../mwvr/vrlistbox.hpp"
+#endif
 
 #include "confirmationdialog.hpp"
 #include "ustring.hpp"
@@ -45,18 +50,35 @@ namespace MWGui
         , mCurrentSlot(nullptr)
     {
         getWidget(mScreenshot, "Screenshot");
-        getWidget(mCharacterSelection, "SelectCharacter");
         getWidget(mInfoText, "InfoText");
         getWidget(mOkButton, "OkButton");
         getWidget(mCancelButton, "CancelButton");
         getWidget(mDeleteButton, "DeleteButton");
         getWidget(mSaveList, "SaveList");
         getWidget(mSaveNameEdit, "SaveNameEdit");
+        getWidget(mCharacterSelection, "SelectCharacter");
+        getWidget(mCharacterSelectionButton, "SelectCharacterButton");
+
+        if (VR::getVR())
+        {
+#ifdef USE_OPENXR
+            mCharacterSelectionListBox = new MWVR::VrListBox();
+#endif
+            mCharacterSelection->setVisible(false);
+            mCharacterSelection->setUserString("Hidden", "true");
+        }
+        else
+        {
+            mCharacterSelectionButton->setVisible(false);
+            mCharacterSelectionButton->setUserString("Hidden", "true");
+        }
+        mCharacterSelectionButton->eventMouseButtonClick
+            += MyGUI::newDelegate(this, &SaveGameDialog::onCharacterSelectionButtonClicked);
+        mCharacterSelection->eventComboChangePosition += MyGUI::newDelegate(this, &SaveGameDialog::onCharacterSelected);
+        mCharacterSelection->eventComboAccept += MyGUI::newDelegate(this, &SaveGameDialog::onCharacterAccept);
         mOkButton->eventMouseButtonClick += MyGUI::newDelegate(this, &SaveGameDialog::onOkButtonClicked);
         mCancelButton->eventMouseButtonClick += MyGUI::newDelegate(this, &SaveGameDialog::onCancelButtonClicked);
         mDeleteButton->eventMouseButtonClick += MyGUI::newDelegate(this, &SaveGameDialog::onDeleteButtonClicked);
-        mCharacterSelection->eventComboChangePosition += MyGUI::newDelegate(this, &SaveGameDialog::onCharacterSelected);
-        mCharacterSelection->eventComboAccept += MyGUI::newDelegate(this, &SaveGameDialog::onCharacterAccept);
         mSaveList->eventListChangePosition += MyGUI::newDelegate(this, &SaveGameDialog::onSlotSelected);
         mSaveList->eventListMouseItemActivate += MyGUI::newDelegate(this, &SaveGameDialog::onSlotMouseClick);
         mSaveList->eventListSelectAccept += MyGUI::newDelegate(this, &SaveGameDialog::onSlotActivated);
@@ -149,12 +171,15 @@ namespace MWGui
         mSaveNameEdit->setCaption("");
         if (mSaving)
             MWBase::Environment::get().getWindowManager()->setKeyFocusWidget(mSaveNameEdit);
+        else if (VR::getVR())
+            MWBase::Environment::get().getWindowManager()->setKeyFocusWidget(mCharacterSelectionButton);
         else
             MWBase::Environment::get().getWindowManager()->setKeyFocusWidget(mSaveList);
 
         center();
 
         mCharacterSelection->setCaption("");
+        mCharacterSelectionButton->setCaption("");
         mCharacterSelection->removeAllItems();
         mCurrentCharacter = nullptr;
         mCurrentSlot = nullptr;
@@ -215,7 +240,12 @@ namespace MWGui
 
         mCharacterSelection->setIndexSelected(selectedIndex);
         if (selectedIndex == MyGUI::ITEM_NONE)
+        {
             mCharacterSelection->setCaptionWithReplacing("#{OMWEngine:SelectCharacter}");
+            mCharacterSelectionButton->setCaptionWithReplacing("#{OMWEngine:SelectCharacter}");
+        }
+        else
+            mCharacterSelectionButton->setCaption(mCharacterSelection->getCaption());
 
         fillSaveList();
     }
@@ -224,8 +254,17 @@ namespace MWGui
     {
         mSaving = !load;
         mSaveNameEdit->setVisible(!load);
-        mCharacterSelection->setUserString("Hidden", load ? "false" : "true");
-        mCharacterSelection->setVisible(load);
+
+        if (VR::getVR())
+        {
+            mCharacterSelectionButton->setUserString("Hidden", load ? "false" : "true");
+            mCharacterSelectionButton->setVisible(load);
+        }
+        else
+        {
+            mCharacterSelection->setUserString("Hidden", load ? "false" : "true");
+            mCharacterSelection->setVisible(load);
+        }
 
         mDeleteButton->setUserString("Hidden", load ? "false" : "true");
         mDeleteButton->setVisible(load);
@@ -247,6 +286,21 @@ namespace MWGui
     {
         if (mCurrentSlot)
             confirmDeleteSave();
+    }
+
+    void SaveGameDialog::onCharacterSelectionButtonClicked(MyGUI::Widget* sender)
+    {
+#ifdef USE_OPENXR
+        mCharacterSelectionListBox->open(mCharacterSelection, [this](std::size_t index) {
+            if (index != MyGUI::ITEM_NONE)
+            {
+                MWBase::Environment::get().getWindowManager()->setKeyFocusWidget(mSaveList);
+                auto caption = mCharacterSelection->getItemNameAt(index);
+                mCharacterSelectionButton->setCaption(caption);
+                onCharacterSelected(mCharacterSelection, index);
+            }
+        });
+#endif
     }
 
     void SaveGameDialog::onConfirmationGiven()

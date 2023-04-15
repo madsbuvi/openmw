@@ -33,6 +33,11 @@
 #include "class.hpp"
 #include "ptr.hpp"
 
+#ifdef USE_OPENXR
+#include <components/vr/session.hpp>
+#include <components/vr/vr.hpp>
+#endif
+
 namespace MWWorld
 {
     Player::Player(const ESM::NPC* player)
@@ -161,6 +166,10 @@ namespace MWWorld
         ptr.getClass().getNpcStats(ptr).setDrawState(state);
     }
 
+#ifdef USE_OPENXR
+        if (VR::getVR())
+            VR::Session::instance().setSneak(sneak);
+#endif
     void Player::yaw(float yaw)
     {
         MWWorld::Ptr ptr = getPlayer();
@@ -181,6 +190,11 @@ namespace MWWorld
     {
         MWWorld::Ptr ptr = getPlayer();
         return ptr.getClass().getNpcStats(ptr).getDrawState();
+    }
+
+    void Player::activate(MWWorld::Ptr obj)
+    {
+        MWBase::Environment::get().getWorld()->activate(obj, getPlayer());
     }
 
     void Player::activate()
@@ -228,6 +242,18 @@ namespace MWWorld
     bool Player::isInCombat()
     {
         return MWBase::Environment::get().getMechanicsManager()->getActorsFighting(getPlayer()).size() != 0;
+    }
+
+    bool Player::isDisabled()
+    {
+        bool disabled = false;
+        auto ptr = getPlayer();
+        const MWWorld::Class& cls = ptr.getClass();
+        auto& stats = cls.getCreatureStats(ptr);
+        disabled |= stats.getKnockedDown();
+        disabled |= stats.getMagicEffects().get(ESM::MagicEffect::Paralyze).getMagnitude() > 0.f;
+        disabled |= stats.isDead();
+        return disabled;
     }
 
     bool Player::enemiesNearby()

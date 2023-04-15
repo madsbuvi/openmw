@@ -42,6 +42,11 @@ namespace MWLua
     class Worker;
 }
 
+namespace Misc
+{
+    class CallbackManager;
+}
+
 namespace Stereo
 {
     class Manager;
@@ -65,6 +70,24 @@ namespace SceneUtil
     {
         class SelectColorFormatOperation;
     }
+}
+
+namespace VR
+{
+    class Session;
+    class TrackingManager;
+    class Viewer;
+}
+
+namespace XR
+{
+    class Instance;
+    class Session;
+}
+
+namespace MWVR
+{
+    class VRGUIManager;
 }
 
 namespace MWState
@@ -157,6 +180,7 @@ namespace OMW
         std::vector<std::string> mGroundcoverFiles;
 
         std::unique_ptr<Stereo::Manager> mStereoManager;
+        std::unique_ptr<Misc::CallbackManager> mCallbackManager;
 
         bool mSkipMenu;
         bool mUseSound;
@@ -269,9 +293,19 @@ namespace OMW
 
         void setRandomSeed(unsigned int seed);
 
+        void configureVR(osg::GraphicsContext* gc);
+
     private:
         Files::ConfigurationManager& mCfgMgr;
         int mGlMaxTextureImageUnits;
+
+#ifdef USE_OPENXR
+        std::unique_ptr<VR::TrackingManager> mVrTrackingManager;
+        std::unique_ptr<MWVR::VRGUIManager> mVrGUIManager;
+        std::unique_ptr<XR::Instance> mXrInstance;
+        std::shared_ptr<XR::Session> mXrSession;
+        std::unique_ptr<VR::Viewer> mVrViewer;
+#endif
     };
 }
 

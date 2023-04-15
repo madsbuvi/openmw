@@ -37,7 +37,11 @@ namespace Stereo
     class StereoFrustumManager;
     class MultiviewStereoStatesetUpdateCallback;
 
+    //! Check if stereo is enabled or not
     bool getStereo();
+
+    //! Sets up any definitions necessary for stereo rendering
+    void shaderStereoDefines(Shader::ShaderManager::DefineMap& defines);
 
     //! Class that provides tools for managing stereo mode
     class Manager
@@ -65,14 +69,8 @@ namespace Stereo
         //! Callback that updates stereo configuration during the update pass
         void setUpdateViewCallback(std::shared_ptr<UpdateViewCallback> cb);
 
-        //! Set the cull callback on the appropriate camera object
-        void setCullCallback(osg::ref_ptr<osg::NodeCallback> cb);
-
         osg::Matrixd computeEyeProjection(int view, bool reverseZ) const;
         osg::Matrixd computeEyeViewOffset(int view) const;
-
-        //! Sets up any definitions necessary for stereo rendering
-        void shaderStereoDefines(Shader::ShaderManager::DefineMap& defines) const;
 
         const std::shared_ptr<MultiviewFramebuffer>& multiviewFramebuffer() { return mMultiviewFramebuffer; }
 
@@ -102,19 +100,22 @@ namespace Stereo
         /// Determine which view the cull visitor belongs to
         Eye getEye(const osgUtil::CullVisitor* cv) const;
 
+        void setShouldAttachMultiviewFramebufferToMainCamera(bool attach);
+
     private:
         friend class MultiviewStereoStatesetUpdateCallback;
         void updateMultiviewStateset(osg::StateSet* stateset);
-        void updateStereoFramebuffer();
+        void updateMultiviewFramebuffer();
         void setupBruteForceTechnique();
         void setupOVRMultiView2Technique();
 
-        osg::ref_ptr<osgViewer::Viewer> mViewer;
         osg::ref_ptr<osg::Camera> mMainCamera;
         osg::ref_ptr<osg::Callback> mUpdateCallback;
         std::string mError;
         osg::Matrixd mMasterProjectionMatrix;
         std::shared_ptr<MultiviewFramebuffer> mMultiviewFramebuffer;
+        bool mShouldAttachMultiviewFramebufferToMainCamera = false;
+        bool mMultiviewFramebufferIsAttached = false;
         bool mEyeResolutionOverriden;
         osg::Vec2i mEyeResolutionOverride;
 

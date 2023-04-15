@@ -40,6 +40,11 @@ namespace MWGui
         void setIcon(const MWWorld::Ptr& ptr);
         void setFrame(const std::string& frame, const MyGUI::IntCoord& coord);
 
+        const std::string& getIcon() const { return mCurrentIcon; };
+        bool hasFrame() const { return !!mFrame; }
+        const std::string& getFrame() const { return mCurrentFrame; };
+        const MyGUI::IntCoord& getFrameCoords() const { return mCurrentFrameCoords; };
+
     protected:
         void initialiseOverride() override;
 
@@ -50,6 +55,7 @@ namespace MWGui
 
         std::string mCurrentIcon;
         std::string mCurrentFrame;
+        MyGUI::IntCoord mCurrentFrameCoords;
 
         static std::map<std::string, float> mScales;
     };

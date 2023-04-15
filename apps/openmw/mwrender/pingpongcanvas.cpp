@@ -3,6 +3,7 @@
 #include <components/shader/shadermanager.hpp>
 #include <components/stereo/multiview.hpp>
 #include <components/stereo/stereomanager.hpp>
+#include <components/vr/vr.hpp>
 
 #include <osg/Texture2DArray>
 
@@ -30,7 +31,7 @@ namespace MWRender
         mLuminanceCalculator.disable();
 
         Shader::ShaderManager::DefineMap defines;
-        Stereo::Manager::instance().shaderStereoDefines(defines);
+        Stereo::shaderStereoDefines(defines);
 
         mFallbackProgram = shaderManager.getProgram("fullscreen_tri");
 
@@ -61,6 +62,11 @@ namespace MWRender
     void PingPongCanvas::drawGeometry(osg::RenderInfo& renderInfo) const
     {
         osg::Geometry::drawImplementation(renderInfo);
+    }
+
+    void PingPongCanvas::setPingPongCallback(std::unique_ptr<PingPongCallback> cb)
+    {
+        mPingPongCallback = std::move(cb);
     }
 
     static void attachCloneOfTemplate(
@@ -95,14 +101,18 @@ namespace MWRender
             filtered.push_back(i);
         }
 
-        auto* resolveViewport = state.getCurrentViewport();
+        if (mPingPongCallback)
+            mPingPongCallback->pingPongBegin(frameId, state, *this);
+
+        auto* resolveViewport
+            = bufferData.destinationViewport ? bufferData.destinationViewport : state.getCurrentViewport();
 
         if (filtered.empty() || !bufferData.postprocessing)
         {
             state.pushStateSet(mFallbackStateSet);
             state.apply();
 
-            if (Stereo::getMultiview())
+            if (Stereo::getMultiview() && !VR::getVR())
             {
                 state.pushStateSet(mMultiviewResolveStateSet);
                 state.apply();
@@ -111,14 +121,24 @@ namespace MWRender
             state.applyTextureAttribute(0, bufferData.sceneTex);
             resolveViewport->apply(state);
 
-            drawGeometry(renderInfo);
+            if (bufferData.destination)
+            {
+                bufferData.destination->apply(state, osg::FrameBufferObject::DRAW_FRAMEBUFFER);
+                drawGeometry(renderInfo);
+                ext->glBindFramebuffer(GL_DRAW_FRAMEBUFFER_EXT, 0);
+            }
+            else
+                drawGeometry(renderInfo);
+
             state.popStateSet();
 
-            if (Stereo::getMultiview())
+            if (Stereo::getMultiview() && !VR::getVR())
             {
                 state.popStateSet();
             }
 
+            if (mPingPongCallback)
+                mPingPongCallback->pingPongEnd(frameId, state, *this);
             return;
         }
 
@@ -303,7 +323,7 @@ namespace MWRender
             state.popStateSet();
         }
 
-        if (Stereo::getMultiview())
+        if (Stereo::getMultiview() && !VR::getVR())
         {
             ext->glBindFramebuffer(GL_DRAW_FRAMEBUFFER_EXT, 0);
             lastApplied = 0;
@@ -322,5 +342,8 @@ namespace MWRender
         {
             bindDestinationFbo();
         }
+
+        if (mPingPongCallback)
+            mPingPongCallback->pingPongEnd(frameId, state, *this);
     }
 }

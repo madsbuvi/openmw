@@ -36,6 +36,7 @@ declare -rA GROUPED_DEPS=(
     libsdl2-dev libqt5opengl5-dev libopenal-dev libunshield-dev libtinyxml-dev
     libbullet-dev liblz4-dev libpng-dev libjpeg-dev libluajit-5.1-dev
     librecast-dev libsqlite3-dev ca-certificates libicu-dev libyaml-cpp-dev
+    mesa-common-dev libxcb-glx0-dev
   "
 
   # These dependencies can alternatively be built and linked statically.

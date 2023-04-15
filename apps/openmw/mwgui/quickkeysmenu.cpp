@@ -335,6 +335,12 @@ namespace MWGui
         activateQuickKey(mActivated->index);
     }
 
+    const QuickKeysMenu::keyData* QuickKeysMenu::keyAt(int index) const
+    {
+        assert(index >= 0 && index < 10);
+        return &mKey[index];
+    }
+
     void QuickKeysMenu::activateQuickKey(int index)
     {
         assert(index >= 1 && index <= 10);

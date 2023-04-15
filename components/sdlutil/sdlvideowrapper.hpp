@@ -23,7 +23,7 @@ namespace SDLUtil
     class VideoWrapper
     {
     public:
-        VideoWrapper(SDL_Window* window, osg::ref_ptr<osgViewer::Viewer> viewer);
+        VideoWrapper(SDL_Window* window, osg::ref_ptr<osgViewer::Viewer> viewer, bool shouldManageGamma);
         ~VideoWrapper();
 
         void setSyncToVBlank(int mode);
@@ -40,6 +40,7 @@ namespace SDLUtil
 
         float mGamma;
         float mContrast;
+        bool mShouldManageGamma;
         bool mHasSetGammaContrast;
 
         // Store system gamma ramp on window creation. Restore system gamma ramp on exit

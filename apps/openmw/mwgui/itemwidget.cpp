@@ -111,6 +111,8 @@ namespace MWGui
 
     void ItemWidget::setFrame(const std::string& frame, const MyGUI::IntCoord& coord)
     {
+        mCurrentFrameCoords = coord;
+
         if (mFrame)
         {
             mFrame->setImageTile(MyGUI::IntSize(coord.width, coord.height)); // Why is this needed? MyGUI bug?

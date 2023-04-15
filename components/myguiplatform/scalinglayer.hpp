@@ -10,7 +10,7 @@ namespace osgMyGUI
     /// the size of the virtual screen,
     /// which is then upscaled to the real screen size during rendering. The aspect ratio is kept intact, adding blanks
     /// to the sides when necessary.
-    class ScalingLayer final : public MyGUI::OverlappedLayer
+    class ScalingLayer : public MyGUI::OverlappedLayer
     {
     public:
         MYGUI_RTTI_DERIVED(ScalingLayer)

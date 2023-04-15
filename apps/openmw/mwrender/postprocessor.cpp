@@ -23,6 +23,7 @@
 #include <components/stereo/multiview.hpp>
 #include <components/stereo/stereomanager.hpp>
 #include <components/vfs/manager.hpp>
+#include <components/vr/vr.hpp>
 
 #include "../mwbase/environment.hpp"
 #include "../mwbase/windowmanager.hpp"
@@ -34,6 +35,10 @@
 #include "sky.hpp"
 #include "transparentpass.hpp"
 #include "vismask.hpp"
+
+#ifdef USE_OPENXR
+#include "../mwvr/vrpingpongcallback.hpp"
+#endif
 
 namespace
 {
@@ -271,6 +276,14 @@ namespace MWRender
 
         setCullCallback(mStateUpdater);
         mHUDCamera->setCullCallback(new HUDCullCallback);
+
+        if (VR::getVR())
+        {
+            Stereo::Manager::instance().setShouldAttachMultiviewFramebufferToMainCamera(false);
+#ifdef USE_OPENXR
+            mPingPongCanvas->setPingPongCallback(std::make_unique<MWVR::PingPongCallback>(this));
+#endif
+        }
     }
 
     void PostProcessor::disable()
@@ -337,9 +350,12 @@ namespace MWRender
 
         if (mTransparentDepthPostPass)
         {
-            mTransparentDepthPostPass->mFbo[frameId] = mFbos[frameId][FBO_Primary];
-            mTransparentDepthPostPass->mMsaaFbo[frameId] = mFbos[frameId][FBO_Multisample];
-            mTransparentDepthPostPass->mOpaqueFbo[frameId] = mFbos[frameId][FBO_OpaqueDepth];
+            if (mTransparentDepthPostPass->mFbo[frameId] != mFbos[frameId][FBO_Primary])
+            {
+                mTransparentDepthPostPass->mFbo[frameId] = mFbos[frameId][FBO_Primary];
+                mTransparentDepthPostPass->mMsaaFbo[frameId] = mFbos[frameId][FBO_Multisample];
+                mTransparentDepthPostPass->mOpaqueFbo[frameId] = mFbos[frameId][FBO_OpaqueDepth];
+            }
         }
 
         size_t frame = cv->getTraversalNumber();

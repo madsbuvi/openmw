@@ -29,6 +29,8 @@
 
 #include <components/settings/settings.hpp>
 
+#include <components/vr/vr.hpp>
+
 #include "../mwworld/class.hpp"
 #include "../mwworld/esmstore.hpp"
 #include "../mwworld/inventorystore.hpp"
@@ -54,6 +56,10 @@
 
 #include "../mwphysics/physicssystem.hpp"
 #include "../mwphysics/projectile.hpp"
+
+#ifdef USE_OPENXR
+#include "../mwvr/vrutil.hpp"
+#endif
 
 namespace
 {
@@ -283,7 +289,17 @@ namespace MWWorld
             return;
 
         osg::Quat orient;
-        if (caster.getClass().isActor())
+#ifdef USE_OPENXR
+        if (caster == MWBase::Environment::get().getWorld()->getPlayerPtr() && VR::getVR())
+        {
+            Stereo::Pose weaponPose;
+            MWBase::Environment::get().getWorld()->getWeaponPose(weaponPose);
+            pos = weaponPose.position.asMWUnits();
+            orient = weaponPose.orientation;
+        }
+        else
+#endif
+            if (caster.getClass().isActor())
             orient = osg::Quat(caster.getRefData().getPosition().rot[0], osg::Vec3f(-1, 0, 0))
                 * osg::Quat(caster.getRefData().getPosition().rot[2], osg::Vec3f(0, 0, -1));
         else

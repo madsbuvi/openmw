@@ -24,6 +24,7 @@ namespace MWInput
         void update(float dt);
 
         void mouseMoved(const SDLUtil::MouseMotionEvent& arg) override;
+        void mouseMovedVR(const SDLUtil::MouseMotionEvent& arg);
         void mousePressed(const SDL_MouseButtonEvent& arg, Uint8 id) override;
         void mouseReleased(const SDL_MouseButtonEvent& arg, Uint8 id) override;
         void mouseWheelMoved(const SDL_MouseWheelEvent& arg) override;
@@ -40,6 +41,9 @@ namespace MWInput
 
         int getMouseMoveX() const { return mMouseMoveX; }
         int getMouseMoveY() const { return mMouseMoveY; }
+
+        // Used to override mouse position when using controllers not through SDL, such as OpenXR.
+        void setMousePosition(int x, int y);
 
     private:
         bool mInvertX;
@@ -59,6 +63,8 @@ namespace MWInput
 
         int mMouseMoveX;
         int mMouseMoveY;
+
+        float mPreviousXAxis;
     };
 }
 #endif

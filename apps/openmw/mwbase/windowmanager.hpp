@@ -60,7 +60,7 @@ namespace MWWorld
 namespace MWGui
 {
     class Layout;
-
+    class DragAndDrop;
     class Console;
     class SpellWindow;
     class TradeWindow;
@@ -114,6 +114,7 @@ namespace MWBase
         /// @note This method will block until the video finishes playing
         /// (and will continually update the window while doing so)
         virtual void playVideo(std::string_view name, bool allowSkipping, bool overrideSounds = true) = 0;
+        virtual bool isPlayingVideo(void) const = 0;
 
         virtual void setNewGame(bool newgame) = 0;
 
@@ -232,6 +233,7 @@ namespace MWBase
         virtual void showCrosshair(bool show) = 0;
         virtual bool getSubtitlesEnabled() = 0;
         virtual bool toggleHud() = 0;
+        virtual MWGui::DragAndDrop& getDragAndDrop(void) = 0;
 
         virtual void disallowMouse() = 0;
         virtual void allowMouse() = 0;
@@ -262,6 +264,8 @@ namespace MWBase
         /// returns the index of the pressed button or -1 if no button was pressed
         /// (->MessageBoxmanager->InteractiveMessageBox)
         virtual int readPressedButton() = 0;
+
+        virtual void update(float duration) = 0;
 
         virtual void updateConsoleObjectPtr(const MWWorld::Ptr& currentPtr, const MWWorld::Ptr& newPtr) = 0;
 
@@ -375,11 +379,17 @@ namespace MWBase
 
         virtual void asyncPrepareSaveMap() = 0;
 
+        virtual void viewerTraversals() = 0;
+
         /// Sets the cull masks for all applicable views
         virtual void setCullMask(uint32_t mask) = 0;
 
         /// Same as viewer->getCamera()->getCullMask(), provided for consistency.
         virtual uint32_t getCullMask() = 0;
+
+        // Disables the scene until exitVoid() is called
+        virtual void enterVoid() = 0;
+        virtual void exitVoid() = 0;
     };
 }
 

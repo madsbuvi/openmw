@@ -5,6 +5,7 @@
 #include <SDL_keyboard.h>
 
 #include <components/settings/settings.hpp>
+#include <components/vr/vr.hpp>
 
 #include "../mwbase/environment.hpp"
 #include "../mwbase/inputmanager.hpp"
@@ -43,6 +44,25 @@ namespace MWInput
 
     void ActionManager::update(float dt)
     {
+    // MERGETODO: figure out where this snipped should fit in now.
+    // it used to be within
+    //             if (!isToggleSneak)
+    //             {
+    //               if (!MWBase::Environment::get().getInputManager()->joystickLastUsed())
+    //               {
+                {
+                    if (isSneaking())
+                    {
+                        if (mBindingsManager->actionIsActive(A_Sneak))
+                        {
+                            toggleSneaking();
+                            player.setSneak(mBindingsManager->actionIsActive(A_Sneak));
+                        }
+                    }
+                    else
+                        player.setSneak(mBindingsManager->actionIsActive(A_Sneak));
+                }
+            }
         if (mBindingsManager->actionIsActive(A_MoveForward) || mBindingsManager->actionIsActive(A_MoveBackward)
             || mBindingsManager->actionIsActive(A_MoveLeft) || mBindingsManager->actionIsActive(A_MoveRight)
             || mBindingsManager->actionIsActive(A_Jump) || mBindingsManager->actionIsActive(A_Sneak)
@@ -219,7 +239,10 @@ namespace MWInput
 
         if (!MWBase::Environment::get().getWindowManager()->isGuiMode()) // No open GUIs, open up the MainMenu
         {
-            MWBase::Environment::get().getWindowManager()->pushGuiMode(MWGui::GM_MainMenu);
+            if (VR::getVR())
+                MWBase::Environment::get().getWindowManager()->pushGuiMode(MWGui::GM_VrMetaMenu);
+            else
+                MWBase::Environment::get().getWindowManager()->pushGuiMode(MWGui::GM_MainMenu);
         }
         else // Close current GUI
         {

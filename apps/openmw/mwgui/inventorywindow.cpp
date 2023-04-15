@@ -75,7 +75,11 @@ namespace MWGui
 
     InventoryWindow::InventoryWindow(
         DragAndDrop* dragAndDrop, osg::Group* parent, Resource::ResourceSystem* resourceSystem)
+#ifdef USE_OPENXR
+        : WindowPinnableBase("openmw_inventory_window_vr.layout")
+#else
         : WindowPinnableBase("openmw_inventory_window.layout")
+#endif
         , mDragAndDrop(dragAndDrop)
         , mSelectedItem(-1)
         , mSortModel(nullptr)

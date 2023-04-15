@@ -55,6 +55,11 @@ namespace MWInput
         }
     };
 
+    ICS::InputControlSystem& BindingsManager::ics()
+    {
+        return *mInputBinder;
+    }
+
     class BindingsListener : public ICS::ChannelListener, public ICS::DetectingBindingListener
     {
     public:

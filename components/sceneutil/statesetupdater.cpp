@@ -1,5 +1,6 @@
 #include "statesetupdater.hpp"
 
+#include <components/stereo/multiview.hpp>
 #include <components/stereo/stereomanager.hpp>
 
 #include <osg/Node>

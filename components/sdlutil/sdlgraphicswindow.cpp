@@ -1,5 +1,7 @@
 #include "sdlgraphicswindow.hpp"
 
+#include <osgViewer/Viewer>
+
 #include <SDL_video.h>
 
 #ifdef OPENMW_GL4ES_MANUAL_INIT
@@ -255,6 +257,23 @@ namespace SDLUtil
         setSwapInterval(mode);
 
         SDL_GL_MakeCurrent(oldWin, oldCtx);
+    }
+
+    osg::GraphicsContext* GraphicsWindowSDL2::findContext(osgViewer::View& view)
+    {
+        view.getCamera();
+        if (view.getCamera()->getGraphicsContext())
+        {
+            return view.getCamera()->getGraphicsContext();
+        }
+
+        for (std::size_t i = 0; i < view.getNumSlaves(); i++)
+        {
+            if (view.getSlave(i)._camera->getGraphicsContext())
+                return view.getSlave(i)._camera->getGraphicsContext();
+        }
+
+        return nullptr;
     }
 
     void GraphicsWindowSDL2::setSwapInterval(VSyncMode mode)

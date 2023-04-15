@@ -2,11 +2,17 @@
 
 #include <MyGUI_Gui.h>
 #include <MyGUI_LayoutManager.h>
+#include <MyGUI_OverlappedLayer.h>
+#include <MyGUI_SharedLayer.h>
 #include <MyGUI_TextBox.h>
 #include <MyGUI_Widget.h>
 #include <MyGUI_Window.h>
 
 #include "ustring.hpp"
+
+#ifdef USE_OPENXR
+#include "../mwvr/vrgui.hpp"
+#endif
 
 namespace MWGui
 {
@@ -43,9 +49,17 @@ namespace MWGui
         mMainWidget->setCoord(x, y, w, h);
     }
 
+    void Layout::setCoordf(float x, float y, float w, float h)
+    {
+        mMainWidget->setRealCoord(x, y, w, h);
+    }
+
     void Layout::setVisible(bool b)
     {
         mMainWidget->setVisible(b);
+#ifdef USE_OPENXR
+        MWVR::VRGUIManager::instance().setVisible(this, b);
+#endif
     }
 
     void Layout::setText(std::string_view name, std::string_view caption)

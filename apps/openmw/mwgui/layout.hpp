@@ -59,6 +59,7 @@ namespace MWGui
 
     public:
         void setCoord(int x, int y, int w, int h);
+        void setCoordf(float x, float y, float w, float h);
 
         virtual void setVisible(bool b);
 

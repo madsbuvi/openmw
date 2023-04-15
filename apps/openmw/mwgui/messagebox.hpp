@@ -68,10 +68,10 @@ namespace MWGui
     {
     public:
         MessageBox(MessageBoxManager& parMessageBoxManager, std::string_view message);
+        ~MessageBox();
         const std::string& getMessage() { return mMessage; }
         int getHeight();
         void update(int height);
-        void setVisible(bool value);
 
         float mCurrentTime;
         float mMaxTime;

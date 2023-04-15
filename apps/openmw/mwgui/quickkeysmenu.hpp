@@ -20,7 +20,17 @@ namespace MWGui
     class QuickKeysMenu : public WindowBase
     {
     public:
+        struct keyData
+        {
+            int index = -1;
+            ItemWidget* button = nullptr;
+            ESM::QuickKeys::Type type = ESM::QuickKeys::Type::Unassigned;
+            ESM::RefId id;
+            std::string name;
+        };
+
         QuickKeysMenu();
+        ~QuickKeysMenu();
 
         void onResChange(int, int) override { center(); }
 
@@ -44,16 +54,9 @@ namespace MWGui
         void readRecord(ESM::ESMReader& reader, uint32_t type);
         void clear() override;
 
-    private:
-        struct keyData
-        {
-            int index = -1;
-            ItemWidget* button = nullptr;
-            ESM::QuickKeys::Type type = ESM::QuickKeys::Type::Unassigned;
-            ESM::RefId id;
-            std::string name;
-        };
+        const keyData* keyAt(int index) const;
 
+    private:
         std::vector<keyData> mKey;
         keyData* mSelected;
         keyData* mActivated;

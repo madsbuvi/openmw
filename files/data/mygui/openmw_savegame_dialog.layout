@@ -5,7 +5,7 @@
         <Property key="Padding" value="8"/>
         <Property key="Spacing" value="8"/>
 
-        <Widget type="ComboBox" skin="MW_ComboBox" position="0 0 0 24" name="SelectCharacter">
+        <Widget type="AutoSizedButton" skin="MW_Button" position="0 0 0 24" name="SelectCharacterButton">
             <Property key="Caption" value="#{OMWEngine:SelectCharacter}"/>
             <UserString key="HStretch" value="true"/>
         </Widget>
@@ -20,6 +20,7 @@
                 <UserString key="HStretch" value="true"/>
                 <UserString key="VStretch" value="true"/>
                 <Property key="Spacing" value="8"/>
+
 
                 <Widget type="ListBox" skin="MW_List" position="0 0 200 200" name="SaveList">
                     <UserString key="HStretch" value="true"/>

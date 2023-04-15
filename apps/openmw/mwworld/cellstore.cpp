@@ -924,6 +924,7 @@ namespace MWWorld
         else
         {
             Log(Debug::Error) << "Cell reference " << ref.mRefID << " is not found!";
+            // case 0: Log(Debug::Error) << "Cell reference '" + ref.mRefID + "' not found!"; return;
             return;
         }
 

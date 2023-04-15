@@ -81,6 +81,8 @@ namespace MWGui
         int mHealthManaStaminaBaseLeft, mWeapBoxBaseLeft, mSpellBoxBaseLeft, mSneakBoxBaseLeft;
         // bottom right elements
         int mMinimapBoxBaseRight, mEffectBoxBaseRight;
+        // initial size
+        MyGUI::IntSize mMainWidgetBaseSize;
 
         DragAndDrop* mDragAndDrop;
 

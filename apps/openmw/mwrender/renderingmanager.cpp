@@ -12,6 +12,7 @@
 #include <osg/Material>
 #include <osg/PolygonMode>
 #include <osg/UserDataContainer>
+#include <osg/ViewportIndexed>
 
 #include <osgUtil/LineSegmentIntersector>
 
@@ -55,6 +56,8 @@
 #include <components/detournavigator/navigator.hpp>
 #include <components/detournavigator/navmeshcacheitem.hpp>
 
+#include <components/vr/vr.hpp>
+
 #include "../mwworld/cellstore.hpp"
 #include "../mwworld/class.hpp"
 #include "../mwworld/groundcoverstore.hpp"
@@ -83,6 +86,12 @@
 #include "terrainstorage.hpp"
 #include "vismask.hpp"
 #include "water.hpp"
+
+#ifdef USE_OPENXR
+#include "../mwvr/vranimation.hpp"
+#include "../mwvr/vrgui.hpp"
+#include "../mwvr/vrpointer.hpp"
+#endif
 
 namespace MWRender
 {
@@ -301,9 +310,9 @@ namespace MWRender
     };
 
     RenderingManager::RenderingManager(osgViewer::Viewer* viewer, osg::ref_ptr<osg::Group> rootNode,
-        Resource::ResourceSystem* resourceSystem, SceneUtil::WorkQueue* workQueue,
-        DetourNavigator::Navigator& navigator, const MWWorld::GroundcoverStore& groundcoverStore,
-        SceneUtil::UnrefQueue& unrefQueue)
+        std::unique_ptr<Camera> camera, Resource::ResourceSystem* resourceSystem, SceneUtil::WorkQueue* workQueue,
+        const std::string& resourcePath, DetourNavigator::Navigator& navigator,
+        const MWWorld::GroundcoverStore& groundcoverStore, SceneUtil::UnrefQueue& unrefQueue)
         : mSkyBlending(Settings::Manager::getBool("sky blending", "Fog"))
         , mViewer(viewer)
         , mRootNode(rootNode)
@@ -518,8 +527,7 @@ namespace MWRender
         // water goes after terrain for correct waterculling order
         mWater = std::make_unique<Water>(
             sceneRoot->getParent(0), sceneRoot, mResourceSystem, mViewer->getIncrementalCompileOperation());
-
-        mCamera = std::make_unique<Camera>(mViewer->getCamera());
+        mCamera = std::move(camera);
 
         mScreenshotManager
             = std::make_unique<ScreenshotManager>(viewer, mRootNode, sceneRoot, mResourceSystem, mWater.get());
@@ -839,6 +847,8 @@ namespace MWRender
                 mask &= ~sToggleWorldMask;
             mWater->showWorld(enabled);
             wm->setCullMask(mask);
+            mViewer->getCamera()->setCullMaskLeft(mask);
+            mViewer->getCamera()->setCullMaskRight(mask);
             return enabled;
         }
         else if (mode == Render_NavMesh)
@@ -929,6 +939,8 @@ namespace MWRender
         stateUpdater->setWindSpeed(world->getWindSpeed());
         stateUpdater->setSkyColor(mSky->getSkyColor());
         mPostProcessor->setUnderwaterFlag(isUnderwater);
+
+        mPlayerAnimation->updateCrosshairs();
     }
 
     void RenderingManager::updatePlayerPtr(const MWWorld::Ptr& ptr)
@@ -1041,19 +1053,24 @@ namespace MWRender
         return osg::Vec4f(min_x, min_y, max_x, max_y);
     }
 
-    RenderingManager::RayResult getIntersectionResult(osgUtil::LineSegmentIntersector* intersector)
+    RayResult getIntersectionResult(osgUtil::LineSegmentIntersector* intersector)
     {
-        RenderingManager::RayResult result;
+        RayResult result;
         result.mHit = false;
         result.mRatio = 0;
+        result.mHitNode = nullptr;
         if (intersector->containsIntersections())
         {
             result.mHit = true;
             osgUtil::LineSegmentIntersector::Intersection intersection = intersector->getFirstIntersection();
 
+            result.mHitPointLocal = intersection.getLocalIntersectPoint();
             result.mHitPointWorld = intersection.getWorldIntersectPoint();
             result.mHitNormalWorld = intersection.getWorldIntersectNormal();
             result.mRatio = intersection.ratio;
+
+            if (!intersection.nodePath.empty())
+                result.mHitNode = intersection.nodePath.back();
 
             PtrHolder* ptrHolder = nullptr;
             std::vector<RefnumMarker*> refnumMarkers;
@@ -1107,15 +1124,15 @@ namespace MWRender
         mask &= ~(Mask_RenderToTexture | Mask_Sky | Mask_Debug | Mask_Effect | Mask_Water | Mask_SimpleWater
             | Mask_Groundcover);
         if (ignorePlayer)
-            mask &= ~(Mask_Player);
+            mask &= ~(Mask_Player | Mask_Pointer);
         if (ignoreActors)
-            mask &= ~(Mask_Actor | Mask_Player);
+            mask &= ~(Mask_Actor | Mask_Player | Mask_Pointer);
 
         mIntersectionVisitor->setTraversalMask(mask);
         return mIntersectionVisitor;
     }
 
-    RenderingManager::RayResult RenderingManager::castRay(
+    RayResult RenderingManager::castRay(
         const osg::Vec3f& origin, const osg::Vec3f& dest, bool ignorePlayer, bool ignoreActors)
     {
         osg::ref_ptr<osgUtil::LineSegmentIntersector> intersector(
@@ -1127,7 +1144,26 @@ namespace MWRender
         return getIntersectionResult(intersector);
     }
 
-    RenderingManager::RayResult RenderingManager::castCameraToViewportRay(
+    RayResult RenderingManager::castRay(
+        const osg::Transform* source, float maxDistance, bool ignorePlayer, bool ignoreActors)
+    {
+
+        if (source)
+        {
+            osg::Matrix worldMatrix = osg::computeLocalToWorld(source->getParentalNodePaths()[0]);
+
+            osg::Vec3f direction = worldMatrix.getRotate() * osg::Vec3f(0, 1, 0);
+            direction.normalize();
+
+            osg::Vec3f raySource = worldMatrix.getTrans();
+            osg::Vec3f rayTarget = worldMatrix.getTrans() + direction * maxDistance;
+
+            return castRay(raySource, rayTarget, ignorePlayer, ignoreActors);
+        }
+        return RayResult();
+    }
+
+    RayResult RenderingManager::castCameraToViewportRay(
         const float nX, const float nY, float maxDistance, bool ignorePlayer, bool ignoreActors)
     {
         osg::ref_ptr<osgUtil::LineSegmentIntersector> intersector(new osgUtil::LineSegmentIntersector(
@@ -1216,8 +1252,15 @@ namespace MWRender
 
     void RenderingManager::renderPlayer(const MWWorld::Ptr& player)
     {
+#ifdef USE_OPENXR
+        mPlayerAnimation
+            = new MWVR::VRAnimation(player, player.getRefData().getBaseNode(), mResourceSystem, false, mSceneRoot);
+        static_cast<MWVR::VRAnimation*>(mPlayerAnimation.get())
+            ->setEnableCrosshairs(Settings::Manager::getBool("show 3D crosshairs", "VR"));
+#else
         mPlayerAnimation = new NpcAnimation(player, player.getRefData().getBaseNode(), mResourceSystem, 0,
             NpcAnimation::VM_Normal, mFirstPersonFieldOfView);
+#endif
 
         mCamera->setAnimation(mPlayerAnimation.get());
         mCamera->attachTo(player);
@@ -1311,6 +1354,15 @@ namespace MWRender
         mSharedUniformStateUpdater->setScreenRes(width, height);
     }
 
+    void RenderingManager::enableVRPointer(bool left, bool right)
+    {
+#ifdef USE_OPENXR
+        if (mPlayerAnimation)
+            static_cast<MWVR::VRAnimation*>(mPlayerAnimation.get())->enablePointers(left, right);
+
+#endif
+    }
+
     void RenderingManager::updateTextureFiltering()
     {
         mViewer->stopThreading();
@@ -1341,6 +1393,12 @@ namespace MWRender
     void RenderingManager::setFogColor(const osg::Vec4f& color)
     {
         mViewer->getCamera()->setClearColor(color);
+        for (unsigned int i = 0; i < mViewer->getNumSlaves(); i++)
+        {
+            const auto& slave = mViewer->getSlave(i);
+            if (slave._camera)
+                slave._camera->setClearColor(color);
+        }
 
         mStateUpdater->setFogColor(color);
     }
@@ -1423,6 +1481,16 @@ namespace MWRender
                     mPostProcessor->disable();
                     if (auto* hud = MWBase::Environment::get().getWindowManager()->getPostProcessorHud())
                         hud->setVisible(false);
+                }
+            }
+            else if (it->first == "VR")
+            {
+                if (it->second == "show 3D crosshairs")
+                {
+#ifdef USE_OPENXR
+                    static_cast<MWVR::VRAnimation*>(mPlayerAnimation.get())
+                        ->setEnableCrosshairs(Settings::Manager::getBool("show 3D crosshairs", "VR"));
+#endif
                 }
             }
         }

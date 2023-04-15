@@ -39,7 +39,7 @@ if(OPENMW_GL4ES_MANUAL_INIT)
 endif()
 
 # Apps and tools
-option(BUILD_OPENMW             "Build OpenMW" ON)
+option(BUILD_OPENMW             "Build OpenMW" OFF) #TEMP: do not build pancake target by default
 option(BUILD_LAUNCHER           "Build Launcher" ON)
 option(BUILD_WIZARD             "Build Installation Wizard" ON)
 option(BUILD_MWINIIMPORTER      "Build MWiniImporter" ON)
@@ -55,6 +55,12 @@ option(BUILD_BENCHMARKS         "Build benchmarks with Google Benchmark" OFF)
 option(BUILD_NAVMESHTOOL        "Build navmesh tool" ON)
 option(BUILD_BULLETOBJECTTOOL   "Build Bullet object tool" ON)
 option(BUILD_OPENCS_TESTS       "Build OpenMW Construction Set tests" OFF)
+
+if (ANDROID)
+    option(BUILD_OPENMW_VR          "Build OpenMW-VR VR" OFF)
+else()
+    option(BUILD_OPENMW_VR          "Build OpenMW-VR VR" ON)
+endif()
 
 set(OpenGL_GL_PREFERENCE LEGACY)  # Use LEGACY as we use GL2; GLNVD is for GL3 and up.
 
@@ -401,7 +407,7 @@ if(OPENMW_USE_SYSTEM_BULLET)
         include(FindPackageMessage)
         find_package_message(Bullet "Found Bullet: ${BULLET_LIBRARIES} ${BULLET_VERSION_STRING}" "${BULLET_VERSION_STRING}-float64")
     else()
-        find_package(Bullet ${REQUIRED_BULLET_VERSION} REQUIRED COMPONENTS BulletCollision LinearMath)
+    find_package(Bullet ${REQUIRED_BULLET_VERSION} REQUIRED COMPONENTS BulletCollision LinearMath)
     endif()
 
     # Only link the Bullet libraries that we need:
@@ -435,6 +441,7 @@ endif()
 
 if(OPENMW_USE_SYSTEM_OSG)
     find_package(OpenSceneGraph 3.6.5 REQUIRED ${USED_OSG_COMPONENTS})  # Bump to 3.6.6 when released
+
 
     if(OSG_STATIC)
         find_package(OSGPlugins REQUIRED COMPONENTS ${USED_OSG_PLUGINS})
@@ -551,6 +558,9 @@ endif (APPLE)
 pack_resource_file(${OpenMW_SOURCE_DIR}/files/settings-default.cfg
     "${OpenMW_BINARY_DIR}" "defaults.bin")
 
+pack_resource_file(${OpenMW_SOURCE_DIR}/files/settings-overrides-vr.cfg
+    "${OpenMW_BINARY_DIR}" "overrides.bin")
+
 configure_resource_file(${OpenMW_SOURCE_DIR}/files/openmw.appdata.xml
     "${OpenMW_BINARY_DIR}" "openmw.appdata.xml")
 
@@ -639,7 +649,7 @@ endif()
 add_subdirectory (components)
 
 # Apps and tools
-if (BUILD_OPENMW)
+if (BUILD_OPENMW OR BUILD_OPENMW_VR)
     add_subdirectory( apps/openmw )
 endif()
 
@@ -720,6 +730,23 @@ if (WIN32)
             set_target_properties(openmw PROPERTIES LINK_FLAGS_MINSIZEREL "/SUBSYSTEM:WINDOWS")
         endif()
 
+    # TODO: properties and link targets should be copied from openmw to openmw_vr instead of duplicating every line
+    if (USE_DEBUG_CONSOLE AND BUILD_OPENMW_VR)
+      set_target_properties(openmw_vr PROPERTIES LINK_FLAGS_DEBUG "/SUBSYSTEM:CONSOLE")
+      set_target_properties(openmw_vr PROPERTIES LINK_FLAGS_RELWITHDEBINFO "/SUBSYSTEM:CONSOLE")
+      set_target_properties(openmw_vr PROPERTIES COMPILE_DEFINITIONS $<$<CONFIG:Debug>:_CONSOLE>)
+    elseif (BUILD_OPENMW_VR)
+      # Turn off debug console, debug output will be written to visual studio output instead
+      set_target_properties(openmw_vr PROPERTIES LINK_FLAGS_DEBUG "/SUBSYSTEM:WINDOWS")
+      set_target_properties(openmw_vr PROPERTIES LINK_FLAGS_RELWITHDEBINFO "/SUBSYSTEM:WINDOWS")
+    endif()
+
+    if (BUILD_OPENMW_VR)
+        # Release builds don't use the debug console
+        set_target_properties(openmw_vr PROPERTIES LINK_FLAGS_RELEASE "/SUBSYSTEM:WINDOWS")
+        set_target_properties(openmw_vr PROPERTIES LINK_FLAGS_MINSIZEREL "/SUBSYSTEM:WINDOWS")
+    endif()
+
         # Play a bit with the warning levels
 
         set(WARNINGS "/W4")
@@ -785,6 +812,14 @@ if (WIN32)
         if (BUILD_OPENMW)
             set_target_properties(openmw PROPERTIES COMPILE_FLAGS "${WARNINGS}")
         endif()
+
+    if (BUILD_OPENMW_VR)
+        if (OPENMW_UNITY_BUILD)
+            set_target_properties(openmw_vr PROPERTIES COMPILE_FLAGS "${WARNINGS} ${MT_BUILD} /bigobj")
+        else()
+            set_target_properties(openmw_vr PROPERTIES COMPILE_FLAGS "${WARNINGS} ${MT_BUILD}")
+        endif()
+    endif()
 
         if (BUILD_WIZARD)
             set_target_properties(openmw-wizard PROPERTIES COMPILE_FLAGS "${WARNINGS}")
@@ -963,18 +998,20 @@ elseif(NOT APPLE)
         INSTALL(FILES "${OpenMW_SOURCE_DIR}/README.md" DESTINATION "." RENAME "README.txt")
         INSTALL(FILES "${OpenMW_SOURCE_DIR}/LICENSE" DESTINATION "." RENAME "LICENSE.txt")
         INSTALL(FILES "${INSTALL_SOURCE}/defaults.bin" DESTINATION ".")
+        INSTALL(FILES "${INSTALL_SOURCE}/overrides.bin" DESTINATION ".")
         INSTALL(FILES "${INSTALL_SOURCE}/gamecontrollerdb.txt" DESTINATION ".")
+        INSTALL(FILES "${INSTALL_SOURCE}/xrcontrollersuggestions.xml" DESTINATION ".")
 
         INSTALL(DIRECTORY "${INSTALL_SOURCE}/resources" DESTINATION ".")
 
         SET(CPACK_GENERATOR "NSIS")
-        SET(CPACK_PACKAGE_NAME "OpenMW")
+        SET(CPACK_PACKAGE_NAME "OpenMW-VR")
         SET(CPACK_PACKAGE_VENDOR "OpenMW.org")
         SET(CPACK_PACKAGE_VERSION ${OPENMW_VERSION})
         SET(CPACK_PACKAGE_VERSION_MAJOR ${OPENMW_VERSION_MAJOR})
         SET(CPACK_PACKAGE_VERSION_MINOR ${OPENMW_VERSION_MINOR})
         SET(CPACK_PACKAGE_VERSION_PATCH ${OPENMW_VERSION_RELEASE})
-        SET(CPACK_PACKAGE_EXECUTABLES "openmw;OpenMW")
+        SET(CPACK_PACKAGE_EXECUTABLES "openmw_vr;OpenMW VR")
         IF(BUILD_LAUNCHER)
             SET(CPACK_PACKAGE_EXECUTABLES "${CPACK_PACKAGE_EXECUTABLES};openmw-launcher;OpenMW Launcher")
         ENDIF(BUILD_LAUNCHER)
@@ -1073,10 +1110,12 @@ elseif(NOT APPLE)
         ENDIF(BUILD_OPENCS)
 
         # Install global configuration files
+        INSTALL(FILES "${INSTALL_SOURCE}/overrides.bin" DESTINATION "${SYSCONFDIR}" COMPONENT "openmw")
         INSTALL(FILES "${INSTALL_SOURCE}/defaults.bin" DESTINATION "${SYSCONFDIR}" COMPONENT "openmw")
         INSTALL(FILES "${INSTALL_SOURCE}/openmw.cfg.install" DESTINATION "${SYSCONFDIR}" RENAME "openmw.cfg" COMPONENT "openmw")
         INSTALL(FILES "${INSTALL_SOURCE}/resources/version" DESTINATION "${SYSCONFDIR}" COMPONENT "openmw")
         INSTALL(FILES "${INSTALL_SOURCE}/gamecontrollerdb.txt" DESTINATION "${SYSCONFDIR}" COMPONENT "openmw")
+        INSTALL(FILES "${INSTALL_SOURCE}/xrcontrollersuggestions.xml" DESTINATION "${SYSCONFDIR}" COMPONENT "openmw")
 
         IF(BUILD_OPENCS)
             INSTALL(FILES "${INSTALL_SOURCE}/defaults-cs.bin" DESTINATION "${SYSCONFDIR}" COMPONENT "opencs")

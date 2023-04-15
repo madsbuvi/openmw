@@ -49,6 +49,7 @@
 #include <components/resource/resourcesystem.hpp>
 #include <components/resource/scenemanager.hpp>
 #include <components/sceneutil/lightmanager.hpp>
+#include <components/sdlutil/sdlgraphicswindow.hpp>
 
 #include "../widget/scenetoolmode.hpp"
 
@@ -143,7 +144,7 @@ namespace CSVRender
     void RenderWidget::toggleRenderStats()
     {
         osgViewer::GraphicsWindow* window
-            = static_cast<osgViewer::GraphicsWindow*>(mView->getCamera()->getGraphicsContext());
+            = static_cast<osgViewer::GraphicsWindow*>(SDLUtil::GraphicsWindowSDL2::findContext(*mView));
 
         window->getEventQueue()->keyPress(osgGA::GUIEventAdapter::KEY_S);
         window->getEventQueue()->keyRelease(osgGA::GUIEventAdapter::KEY_S);
@@ -222,7 +223,7 @@ namespace CSVRender
     {
         // Since we're holding on to the resources past the existence of this graphics context, we'll need to manually
         // release the created objects
-        mResourceSystem->releaseGLObjects(mView->getCamera()->getGraphicsContext()->getState());
+        mResourceSystem->releaseGLObjects(SDLUtil::GraphicsWindowSDL2::findContext(*mView)->getState());
     }
 
     osg::ref_ptr<osg::Geometry> SceneWidget::createGradientRectangle(QColor bgColour, QColor gradientColour)

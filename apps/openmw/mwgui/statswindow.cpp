@@ -34,7 +34,11 @@
 namespace MWGui
 {
     StatsWindow::StatsWindow(DragAndDrop* drag)
+#ifdef USE_OPENXR
+        : WindowPinnableBase("openmw_stats_window_vr.layout")
+#else
         : WindowPinnableBase("openmw_stats_window.layout")
+#endif
         , NoDrop(drag, mMainWidget)
         , mSkillView(nullptr)
         , mMajorSkills()

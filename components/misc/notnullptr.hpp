@@ -25,6 +25,8 @@ namespace Misc
 
         constexpr T& operator*() const noexcept { return *mValue; }
 
+        T* get() const { return mValue; }
+
     private:
         T* mValue;
     };

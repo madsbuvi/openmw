@@ -6,6 +6,7 @@
 
 #include <components/sdlutil/sdlinputwrapper.hpp>
 #include <components/sdlutil/sdlmappings.hpp>
+#include <components/vr/vr.hpp>
 
 #include "../mwbase/environment.hpp"
 #include "../mwbase/inputmanager.hpp"
@@ -13,6 +14,10 @@
 #include "../mwbase/world.hpp"
 
 #include "../mwworld/player.hpp"
+
+#ifdef USE_OPENXR
+#include "../mwvr/vrinputmanager.hpp"
+#endif
 
 #include "actions.hpp"
 #include "bindingsmanager.hpp"
@@ -35,6 +40,7 @@ namespace MWInput
         , mGuiCursorEnabled(true)
         , mMouseMoveX(0)
         , mMouseMoveY(0)
+        , mPreviousXAxis(0.f)
     {
         int w, h;
         SDL_GetWindowSize(window, &w, &h);
@@ -62,8 +68,25 @@ namespace MWInput
         }
     }
 
+    void MouseManager::mouseMovedVR(const SDLUtil::MouseMotionEvent& arg)
+    {
+        if (VR::getKBMouseModeActive())
+        {
+            float x = arg.xrel * mCameraSensitivity * (mInvertX ? -1 : 1) / 256.f;
+#ifdef USE_OPENXR
+            MWVR::VRInputManager::instance().mouseMove(x);
+#endif
+        }
+    }
+
     void MouseManager::mouseMoved(const SDLUtil::MouseMotionEvent& arg)
     {
+        if (VR::getVR())
+        {
+            mouseMovedVR(arg);
+            return;
+        }
+
         mBindingsManager->mouseMoved(arg);
 
         MWBase::InputManager* input = MWBase::Environment::get().getInputManager();
@@ -187,14 +210,15 @@ namespace MWInput
             && !MWBase::Environment::get().getWindowManager()->isConsoleMode();
 
         bool wasRelative = mInputWrapper->getMouseRelative();
-        bool isRelative = !MWBase::Environment::get().getWindowManager()->isGuiMode();
+        bool isRelative = (VR::getVR() && VR::getKBMouseModeActive())
+            || !MWBase::Environment::get().getWindowManager()->isGuiMode();
 
         // don't keep the pointer away from the window edge in gui mode
         // stop using raw mouse motions and switch to system cursor movements
         mInputWrapper->setMouseRelative(isRelative);
 
-        // we let the mouse escape in the main menu
-        mInputWrapper->setGrabPointer(grab && (mGrabCursor || isRelative));
+        // we let the mouse escape in the main menu, except for VR where the user can't see the mouse escaping.
+        mInputWrapper->setGrabPointer((grab && (mGrabCursor || isRelative)) || VR::getKBMouseModeActive());
 
         // we switched to non-relative mode, move our cursor to where the in-game
         // cursor is
@@ -212,6 +236,15 @@ namespace MWInput
             return;
 
         float xAxis = mBindingsManager->getActionValue(A_LookLeftRight) * 2.0f - 1.0f;
+
+#ifdef USE_OPENXR
+        if (VR::getVR())
+        {
+            MWVR::VRInputManager::instance().turnLeftRight(xAxis, mPreviousXAxis, dt);
+            mPreviousXAxis = xAxis;
+        }
+#endif
+
         float yAxis = mBindingsManager->getActionValue(A_LookUpDown) * 2.0f - 1.0f;
         if (xAxis == 0 && yAxis == 0)
             return;
@@ -249,6 +282,8 @@ namespace MWInput
 
     void MouseManager::injectMouseMove(float xMove, float yMove, float mouseWheelMove)
     {
+        if (VR::getVR())
+            return;
         mGuiCursorX += xMove;
         mGuiCursorY += yMove;
         mMouseWheel += mouseWheelMove;
@@ -265,5 +300,12 @@ namespace MWInput
     {
         float uiScale = MWBase::Environment::get().getWindowManager()->getScalingFactor();
         mInputWrapper->warpMouse(static_cast<int>(mGuiCursorX * uiScale), static_cast<int>(mGuiCursorY * uiScale));
+    }
+
+    void MouseManager::setMousePosition(int x, int y)
+    {
+        float uiScale = MWBase::Environment::get().getWindowManager()->getScalingFactor();
+        mGuiCursorX = x / uiScale;
+        mGuiCursorY = y / uiScale;
     }
 }

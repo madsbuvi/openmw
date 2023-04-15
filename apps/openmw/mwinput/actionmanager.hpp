@@ -27,6 +27,8 @@ namespace MWInput
 
         bool checkAllowedToUseItems() const;
 
+        bool checkIsRunning();
+
         void toggleMainMenu();
         void toggleInventory();
         void toggleConsole();

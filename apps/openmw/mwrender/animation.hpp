@@ -456,7 +456,7 @@ namespace MWRender
         void disable(std::string_view groupname);
 
         /** Retrieves the velocity (in units per second) that the animation will move. */
-        float getVelocity(std::string_view groupname) const;
+        virtual float getVelocity(std::string_view groupname) const;
 
         virtual osg::Vec3f runAnimation(float duration);
 
@@ -504,6 +504,8 @@ namespace MWRender
         virtual bool canBeHarvested() const { return false; }
 
         virtual void removeFromScene();
+
+        virtual void updateCrosshairs(){};
 
     private:
         Animation(const Animation&);

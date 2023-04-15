@@ -33,7 +33,11 @@ namespace MWGui
 {
 
     ContainerWindow::ContainerWindow(DragAndDrop* dragAndDrop)
+#ifdef USE_OPENXR
+        : WindowBase("openmw_container_window_vr.layout")
+#else
         : WindowBase("openmw_container_window.layout")
+#endif
         , mDragAndDrop(dragAndDrop)
         , mSortModel(nullptr)
         , mModel(nullptr)

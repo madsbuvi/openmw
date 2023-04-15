@@ -21,6 +21,8 @@
 #include <components/sdlutil/imagetosurface.hpp>
 #include <components/sdlutil/sdlgraphicswindow.hpp>
 
+#include <components/shader/shadermanager.hpp>
+
 #include <components/resource/resourcesystem.hpp>
 #include <components/resource/scenemanager.hpp>
 #include <components/resource/stats.hpp>
@@ -29,6 +31,8 @@
 
 #include <components/stereo/multiview.hpp>
 #include <components/stereo/stereomanager.hpp>
+
+#include <components/misc/callbackmanager.hpp>
 
 #include <components/sceneutil/workqueue.hpp>
 
@@ -48,6 +52,13 @@
 
 #include <components/settings/shadermanager.hpp>
 
+#include <components/vr/session.hpp>
+#include <components/vr/trackingmanager.hpp>
+#include <components/vr/viewer.hpp>
+#include <components/vr/vr.hpp>
+#include <components/xr/instance.hpp>
+#include <components/xr/session.hpp>
+
 #include "mwinput/inputmanagerimp.hpp"
 
 #include "mwgui/windowmanagerimp.hpp"
@@ -63,6 +74,7 @@
 #include "mwworld/class.hpp"
 #include "mwworld/worldimp.hpp"
 
+#include "mwrender/camera.hpp"
 #include "mwrender/vismask.hpp"
 
 #include "mwclass/classes.hpp"
@@ -76,6 +88,11 @@
 #include "mwstate/statemanagerimp.hpp"
 
 #include "profile.hpp"
+
+#ifdef USE_OPENXR
+#include "mwvr/vrgui.hpp"
+#include "mwvr/vrinputmanager.hpp"
+#endif
 
 namespace
 {
@@ -157,6 +174,20 @@ namespace
         {
             Stereo::Manager::instance().initializeStereo(graphicsContext);
         }
+    };
+
+    class InitializeVrOperation : public osg::GraphicsOperation
+    {
+    public:
+        InitializeVrOperation(OMW::Engine* engine)
+            : GraphicsOperation("InitializeVrOperation", false)
+            , mEngine(engine)
+        {
+        }
+
+        void operator()(osg::GraphicsContext* graphicsContext) override { mEngine->configureVR(graphicsContext); }
+
+        OMW::Engine* mEngine;
     };
 }
 
@@ -363,6 +394,11 @@ OMW::Engine::Engine(Files::ConfigurationManager& configurationManager)
     , mNewGame(false)
     , mCfgMgr(configurationManager)
     , mGlMaxTextureImageUnits(0)
+#ifdef USE_OPENXR
+    , mVrTrackingManager(nullptr)
+    , mVrGUIManager(nullptr)
+    , mXrInstance(nullptr)
+#endif
 {
     SDL_SetHint(SDL_HINT_ACCELEROMETER_AS_JOYSTICK, "0"); // We use only gamepads
 
@@ -389,7 +425,6 @@ OMW::Engine::~Engine()
     mScriptManager = nullptr;
     mWindowManager = nullptr;
     mWorld = nullptr;
-    mStereoManager = nullptr;
     mSoundManager = nullptr;
     mInputManager = nullptr;
     mStateManager = nullptr;
@@ -403,7 +438,15 @@ OMW::Engine::~Engine()
     mWorkQueue = nullptr;
 
     mViewer = nullptr;
-
+#ifdef USE_OPENXR
+    mVrViewer = nullptr;
+    mCallbackManager = nullptr;
+    mStereoManager = nullptr;
+    mVrGUIManager = nullptr;
+    mXrSession = nullptr;
+    mXrInstance = nullptr;
+    mVrTrackingManager = nullptr;
+#endif
     mResourceSystem.reset();
 
     mEncoder = nullptr;
@@ -475,6 +518,9 @@ void OMW::Engine::createWindow()
     bool windowBorder = Settings::Manager::getBool("window border", "Video");
     int vsync = Settings::Manager::getInt("vsync mode", "Video");
     unsigned int antialiasing = std::max(0, Settings::Manager::getInt("antialiasing", "Video"));
+    if (VR::getVR())
+        // MSAA needs to happen in offscreen buffers.
+        antialiasing = 0;
 
     int pos_x = SDL_WINDOWPOS_CENTERED_DISPLAY(screen), pos_y = SDL_WINDOWPOS_CENTERED_DISPLAY(screen);
 
@@ -604,6 +650,9 @@ void OMW::Engine::createWindow()
     if (Debug::shouldDebugOpenGL())
         realizeOperations->add(new Debug::EnableGLDebugOperation());
 
+    if (VR::getVR())
+        realizeOperations->add(new InitializeVrOperation(this));
+
     realizeOperations->add(mSelectDepthFormatOperation);
     realizeOperations->add(mSelectColorFormatOperation);
 
@@ -656,6 +705,8 @@ void OMW::Engine::prepareEngine()
     mViewer->setSceneData(rootNode);
 
     createWindow();
+
+    mCallbackManager = std::make_unique<Misc::CallbackManager>(mViewer);
 
     mVFS = std::make_unique<VFS::Manager>(mFSStrict);
 
@@ -752,13 +803,60 @@ void OMW::Engine::prepareEngine()
         Version::getOpenmwVersionDescription(mResDir), shadersSupported, mCfgMgr);
     mEnvironment.setWindowManager(*mWindowManager);
 
+#ifdef USE_OPENXR
+    mVrGUIManager = std::make_unique<MWVR::VRGUIManager>(mResourceSystem.get(), mViewer->getSceneData()->asGroup());
+
+    const std::string xrinputuserdefault = mCfgMgr.getUserConfigPath().string() + "/xrcontrollersuggestions.xml";
+    const std::string xrinputlocaldefault = mCfgMgr.getLocalPath().string() + "/xrcontrollersuggestions.xml";
+    const std::string xrinputglobaldefault = mCfgMgr.getGlobalPath().string() + "/xrcontrollersuggestions.xml";
+
+    std::string xrControllerSuggestions;
+    if (boost::filesystem::exists(xrinputuserdefault))
+        xrControllerSuggestions = xrinputuserdefault;
+    else if (boost::filesystem::exists(xrinputlocaldefault))
+        xrControllerSuggestions = xrinputlocaldefault;
+    else if (boost::filesystem::exists(xrinputglobaldefault))
+        xrControllerSuggestions = xrinputglobaldefault;
+    else
+        xrControllerSuggestions = ""; // if it doesn't exist, pass in an empty string
+
+    std::string defaultXrControllerSuggestions;
+    if (boost::filesystem::exists(xrinputlocaldefault))
+        defaultXrControllerSuggestions = xrinputlocaldefault;
+    else if (boost::filesystem::exists(xrinputglobaldefault))
+        defaultXrControllerSuggestions = xrinputglobaldefault;
+    else
+        defaultXrControllerSuggestions = ""; // if it doesn't exist, pass in an empty string
+
+    Log(Debug::Verbose) << "xrinputuserdefault: " << xrinputuserdefault;
+    Log(Debug::Verbose) << "xrinputlocaldefault: " << xrinputlocaldefault;
+    Log(Debug::Verbose) << "xrinputglobaldefault: " << xrinputglobaldefault;
+
+    mInputManager = std::make_unique<MWVR::VRInputManager>(mWindow, mViewer, mScreenCaptureHandler,
+        mScreenCaptureOperation, keybinderUser, keybinderUserExists, userGameControllerdb, gameControllerdb, mGrab,
+        xrControllerSuggestions, defaultXrControllerSuggestions);
+#else
     mInputManager = std::make_unique<MWInput::InputManager>(mWindow, mViewer, mScreenCaptureHandler,
         mScreenCaptureOperation, keybinderUser, keybinderUserExists, userGameControllerdb, gameControllerdb, mGrab);
+#endif
     mEnvironment.setInputManager(*mInputManager);
 
     // Create sound system
     mSoundManager = std::make_unique<MWSound::SoundManager>(mVFS.get(), mUseSound);
     mEnvironment.setSoundManager(*mSoundManager);
+
+#ifdef USE_OPENXR
+    mVrViewer = std::make_unique<VR::Viewer>(mXrSession, mViewer);
+    mVrViewer->configureCallbacks();
+    auto cullMask = ~(MWRender::VisMask::Mask_UpdateVisitor | MWRender::VisMask::Mask_SimpleWater);
+    cullMask &= ~MWRender::VisMask::Mask_GUI;
+    cullMask |= MWRender::VisMask::Mask_3DGUI;
+    mViewer->getCamera()->setCullMask(cullMask);
+    mViewer->getCamera()->setCullMaskLeft(cullMask);
+    mViewer->getCamera()->setCullMaskRight(cullMask);
+#endif
+
+    auto camera = std::make_unique<MWRender::Camera>(mViewer->getCamera());
 
     if (!mSkipMenu)
     {
@@ -768,9 +866,10 @@ void OMW::Engine::prepareEngine()
     }
 
     // Create the world
+    [[maybe_unused]] auto* cameraTemp = camera.get();
     mWorld = std::make_unique<MWWorld::World>(mViewer, rootNode, mResourceSystem.get(), mWorkQueue.get(), *mUnrefQueue,
         mFileCollections, mContentFiles, mGroundcoverFiles, mEncoder.get(), mActivationDistanceOverride, mCellName,
-        mCfgMgr.getUserDataPath());
+        mStartupScript, mResDir.string(), mCfgMgr.getUserDataPath().string(), std::move(camera));
     mWorld->setupPlayer();
     mWorld->setRandomSeed(mRandomSeed);
     mEnvironment.setWorld(*mWorld);
@@ -847,6 +946,12 @@ void OMW::Engine::prepareEngine()
 // Initialise and enter main loop.
 void OMW::Engine::go()
 {
+#ifdef USE_OPENXR
+    VR::setVR(true);
+#else
+    VR::setVR(false);
+#endif
+
     assert(!mContentFiles.empty());
 
     Log(Debug::Info) << "OSG version: " << osgGetVersion();
@@ -909,6 +1014,15 @@ void OMW::Engine::go()
     if (stats.is_open())
         Resource::CollectStatistics(mViewer);
 
+    // TODO: Prevent Mask_GUI from being re-enabled instead
+    if (VR::getVR())
+    {
+        mViewer->getCamera()->setCullMask(mViewer->getCamera()->getCullMask() & ~(MWRender::VisMask::Mask_GUI));
+#ifdef USE_OPENXR
+        static_cast<MWVR::VRInputManager*>(mInputManager.get())->calibrate();
+#endif
+    }
+
     // Start the game
     if (!mSaveGameFile.empty())
     {
@@ -953,6 +1067,8 @@ void OMW::Engine::go()
         }
         else
         {
+            if (VR::getVR())
+                VR::Viewer::instance().newFrame();
             bool guiActive = mWindowManager->isGuiMode();
             if (!guiActive)
                 simulationTime += dt;
@@ -1044,4 +1160,16 @@ void OMW::Engine::setSaveGameFile(const std::filesystem::path& savegame)
 void OMW::Engine::setRandomSeed(unsigned int seed)
 {
     mRandomSeed = seed;
+}
+
+void OMW::Engine::configureVR(osg::GraphicsContext* gc)
+{
+#ifdef USE_OPENXR
+    mVrTrackingManager = std::make_unique<VR::TrackingManager>();
+    mXrInstance = std::make_unique<XR::Instance>(gc);
+    mXrSession = mXrInstance->createSession();
+    if (mXrSession->appShouldShareDepthInfo())
+        mSelectDepthFormatOperation->setSupportedFormats(mXrInstance->platform().supportedDepthFormats());
+    mSelectColorFormatOperation->setSupportedFormats({ mXrInstance->platform().supportedColorFormats() });
+#endif
 }

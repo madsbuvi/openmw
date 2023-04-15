@@ -33,6 +33,8 @@
 
 #include <components/vfs/manager.hpp>
 
+#include <components/vr/vr.hpp>
+
 #include <components/sceneutil/actorutil.hpp>
 #include <components/sceneutil/lightmanager.hpp>
 #include <components/sceneutil/lightutil.hpp>
@@ -51,6 +53,7 @@
 #include "../mwworld/containerstore.hpp"
 #include "../mwworld/esmstore.hpp"
 
+#include "../mwmechanics/actorutil.hpp"
 #include "../mwmechanics/character.hpp" // FIXME: for MWMechanics::Priority
 
 #include "rotatecontroller.hpp"
@@ -941,8 +944,44 @@ namespace MWRender
         return mNodeMap;
     }
 
+    static bool vrOverride(const std::string& groupname, const std::string& bone)
+    {
+#ifdef USE_OPENXR
+
+        if (!VR::getRightControllerActive())
+            return false;
+
+        // TODO: It's difficult to design a good override system when
+        // I don't have a good understanding of the animation code. So for
+        // now i just hardcode blocking of updaters for nodes that should not be animated in VR.
+        // Add any bone+groupname pair that is messing with Vr comfort here.
+        using Overrides = std::set<std::string>;
+        using GroupOverrides = std::map<std::string, Overrides>;
+        static GroupOverrides sVrOverrides = {
+            { "crossbow", { "weapon bone" } },
+            { "throwweapon", { "weapon bone" } },
+            { "bowandarrow", { "weapon bone" } },
+        };
+
+        bool override = false;
+        auto find = sVrOverrides.find(groupname);
+        if (find != sVrOverrides.end())
+        {
+            override = !!find->second.count(bone);
+        }
+
+        return override;
+#else
+        (void)bone;
+        (void)groupname;
+        return false;
+#endif
+    }
+
     void Animation::resetActiveGroups()
     {
+        const bool isPlayer = (mPtr == MWMechanics::getPlayer());
+
         // remove all previous external controllers from the scene graph
         for (auto it = mActiveControllers.begin(); it != mActiveControllers.end(); ++it)
         {
@@ -985,12 +1024,16 @@ namespace MWRender
                 {
                     osg::ref_ptr<osg::Node> node = getNodeMap().at(
                         it->first); // this should not throw, we already checked for the node existing in addAnimSource
-
                     osg::Callback* callback = it->second->getAsCallback();
-                    node->addUpdateCallback(callback);
+                    if (!isPlayer || !vrOverride(active->first, it->first))
+                        node->addUpdateCallback(callback);
                     mActiveControllers.emplace_back(node, callback);
 
-                    if (blendMask == 0 && node == mAccumRoot)
+                    if (blendMask == 0 && node == mAccumRoot
+#ifdef USE_OPENXR
+                        && !(isPlayer && VR::getRightControllerActive())
+#endif
+                    )
                     {
                         mAccumCtrl = it->second;
 

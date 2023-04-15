@@ -9,6 +9,7 @@
 #include <components/misc/resourcehelpers.hpp>
 #include <components/resource/resourcesystem.hpp>
 #include <components/settings/settings.hpp>
+#include <components/vr/vr.hpp>
 
 #include "../mwbase/environment.hpp"
 #include "../mwbase/windowmanager.hpp"
@@ -48,6 +49,8 @@ namespace MWGui
         }
 
         int w = 2;
+
+        std::vector<MyGUI::ImageBox*> images;
 
         for (const auto& [effectId, effectInfos] : effects)
         {
@@ -186,12 +189,26 @@ namespace MWGui
                 // Fade out
                 if (totalDuration >= fadeTime && fadeTime > 0.f)
                     image->setAlpha(std::min(remainingDuration / fadeTime, 1.f));
+
+                images.push_back(image);
             }
             else if (mWidgetMap.find(effectId) != mWidgetMap.end())
             {
                 MyGUI::ImageBox* image = mWidgetMap[effectId];
                 image->setVisible(false);
                 image->setAlpha(1.f);
+            }
+        }
+
+        if (VR::getVR())
+        {
+            // In VR mode, the effect box grows to the right.
+            // They are therefore added in the reverse order to retain positional stability.
+            int reverse_w = w;
+            for (auto* image : images)
+            {
+                reverse_w -= 16;
+                image->setPosition(reverse_w, 2);
             }
         }
 
@@ -202,7 +219,12 @@ namespace MWGui
                 s = 0;
             int diff = parent->getWidth() - s;
             parent->setSize(s, parent->getHeight());
+#ifndef USE_OPENXR
+            // in VR mode, the effect box grows to the right and does not need repositioning
             parent->setPosition(parent->getLeft() + diff, parent->getTop());
+#else
+            (void)diff; // Unused
+#endif
         }
 
         // hide inactive effects

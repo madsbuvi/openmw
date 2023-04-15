@@ -32,7 +32,7 @@ namespace MWRender
         osg::ref_ptr<osgViewer::Viewer> mViewer;
         osg::ref_ptr<osg::Group> mRootNode;
         osg::ref_ptr<osg::Group> mSceneRoot;
-        osg::ref_ptr<NotifyDrawCompletedCallback> mDrawCompleteCallback;
+        std::shared_ptr<NotifyDrawCompletedCallback> mDrawCompleteCallback;
         Resource::ResourceSystem* mResourceSystem;
         Water* mWater;
 

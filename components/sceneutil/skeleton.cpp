@@ -36,6 +36,7 @@ namespace SceneUtil
     Skeleton::Skeleton()
         : mBoneCacheInit(false)
         , mNeedToUpdateBoneMatrices(true)
+        , mTracked(false)
         , mActive(Active)
         , mLastFrameNumber(0)
         , mLastCullFrameNumber(0)
@@ -46,6 +47,7 @@ namespace SceneUtil
         : osg::Group(copy, copyop)
         , mBoneCacheInit(false)
         , mNeedToUpdateBoneMatrices(true)
+        , mTracked(false)
         , mActive(copy.mActive)
         , mLastFrameNumber(0)
         , mLastCullFrameNumber(0)
@@ -92,7 +94,7 @@ namespace SceneUtil
         return bone;
     }
 
-    void Skeleton::updateBoneMatrices(unsigned int traversalNumber)
+    bool Skeleton::updateBoneMatrices(unsigned int traversalNumber)
     {
         if (traversalNumber != mLastFrameNumber)
             mNeedToUpdateBoneMatrices = true;
@@ -108,7 +110,9 @@ namespace SceneUtil
             }
 
             mNeedToUpdateBoneMatrices = false;
+            return true;
         }
+        return false;
     }
 
     void Skeleton::setActive(ActiveType active)
@@ -126,6 +130,11 @@ namespace SceneUtil
         mLastFrameNumber = 0;
         mBoneCache.clear();
         mBoneCacheInit = false;
+    }
+
+    void Skeleton::markBoneMatriceDirty()
+    {
+        mNeedToUpdateBoneMatrices = true;
     }
 
     void Skeleton::traverse(osg::NodeVisitor& nv)

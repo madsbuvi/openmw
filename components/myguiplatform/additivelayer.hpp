@@ -14,7 +14,7 @@ namespace osgMyGUI
 {
 
     /// @brief A Layer rendering with additive blend mode.
-    class AdditiveLayer final : public MyGUI::OverlappedLayer
+    class AdditiveLayer : public MyGUI::OverlappedLayer
     {
     public:
         MYGUI_RTTI_DERIVED(AdditiveLayer)

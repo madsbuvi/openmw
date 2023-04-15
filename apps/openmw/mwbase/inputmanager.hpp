@@ -71,6 +71,8 @@ namespace MWBase
         virtual void enableDetectingBindingMode(int action, bool keyboard) = 0;
         virtual void resetToDefaultKeyBindings() = 0;
         virtual void resetToDefaultControllerBindings() = 0;
+        virtual void applyHapticsLeftHand(float intensity) = 0;
+        virtual void applyHapticsRightHand(float intensity) = 0;
 
         /// Returns if the last used input device was a joystick or a keyboard
         /// @return true if joystick, false otherwise

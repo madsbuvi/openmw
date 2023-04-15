@@ -1,4 +1,5 @@
 #include "sdlinputwrapper.hpp"
+#include "sdlgraphicswindow.hpp"
 
 #include <components/debug/debuglog.hpp>
 #include <components/settings/settings.hpp>
@@ -250,7 +251,7 @@ namespace SDLUtil
                 SDL_GL_GetDrawableSize(mSDLWindow, &w, &h);
                 int x, y;
                 SDL_GetWindowPosition(mSDLWindow, &x, &y);
-                mViewer->getCamera()->getGraphicsContext()->resized(x, y, w, h);
+                GraphicsWindowSDL2::findContext(*mViewer)->resized(x, y, w, h);
 
                 mViewer->getEventQueue()->windowResize(x, y, w, h);
 

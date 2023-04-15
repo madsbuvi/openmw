@@ -126,6 +126,7 @@ namespace MWWorld
         ///< Return item max health or throw an exception, if class does not have item health
         /// (default implementation: throw an exception)
 
+        // MERGETODO: see creature.hpp and npc.hpp mergetodo
         virtual bool evaluateHit(const Ptr& ptr, Ptr& victim, osg::Vec3f& hitPosition) const;
         ///< Evaluate the victim of a melee hit produced by ptr in the current circumstances and return dice roll
         ///< success.
@@ -138,14 +139,19 @@ namespace MWWorld
         /// \param attackStrength how long the attack was charged for, a value in 0-1 range.
         /// \param type - type of attack, one of the MWMechanics::CreatureStats::AttackType
         ///               enums. ignored for creature attacks.
+        /// \param simulated - If true, this function will only check if a hit would be made, and have no side effects.
+        /// This parameter has no effect for Creature classes.
+        /// @return True if the attack had a victim, regardless if hit was successful or not.
         /// (default implementation: throw an exception)
 
         virtual void onHit(const MWWorld::Ptr& ptr, float damage, bool ishealth, const MWWorld::Ptr& object,
-            const MWWorld::Ptr& attacker, const osg::Vec3f& hitPosition, bool successful) const;
+            const MWWorld::Ptr& attacker, const osg::Vec3f& hitPosition, bool successful,
+            float hitStrength = 0.f) const;
         ///< Alerts \a ptr that it's being hit for \a damage points to health if \a ishealth is
         /// true (else fatigue) by \a object (sword, arrow, etc). \a attacker specifies the
         /// actor responsible for the attack, and \a successful specifies if the hit is
-        /// successful or not.
+        /// successful or not. \a hitStrength is the fraction of max attack strength applied, and is
+        /// used to determine haptic feedback intensity.
 
         virtual void block(const Ptr& ptr) const;
         ///< Play the appropriate sound for a blocked attack, depending on the currently equipped shield

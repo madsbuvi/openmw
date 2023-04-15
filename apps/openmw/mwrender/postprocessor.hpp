@@ -201,6 +201,8 @@ namespace MWRender
         void loadChain();
         void saveChain();
 
+        bool depthPassEnabled() const { return !mDisableDepthPasses; };
+
     private:
         void populateTechniqueFiles();
 

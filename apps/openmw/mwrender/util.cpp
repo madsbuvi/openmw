@@ -1,6 +1,7 @@
 #include "util.hpp"
 
 #include <osg/Node>
+#include <osg/RenderInfo>
 #include <osg/ValueObject>
 
 #include <components/misc/resourcehelpers.hpp>
@@ -65,6 +66,19 @@ namespace MWRender
         stateset->setTextureAttribute(0, tex, osg::StateAttribute::OVERRIDE);
 
         node->setStateSet(stateset);
+    }
+
+    MipmapCallback::~MipmapCallback() {}
+
+    void MipmapCallback::operator()(osg::RenderInfo& renderInfo) const
+    {
+        auto* gl = renderInfo.getState()->get<osg::GLExtensions>();
+        auto* tex = mTexture->getTextureObject(renderInfo.getContextID());
+        if (tex)
+        {
+            tex->bind();
+            gl->glGenerateMipmap(tex->target());
+        }
     }
 
 }

@@ -12,6 +12,10 @@
 #include "draganddrop.hpp"
 #include "exposedwindow.hpp"
 
+#ifdef USE_OPENXR
+#include "../mwvr/vrgui.hpp"
+#endif
+
 using namespace MWGui;
 
 WindowBase::WindowBase(std::string_view parLayout)
@@ -55,6 +59,15 @@ void WindowBase::setVisible(bool visible)
         onOpen();
     else if (wasVisible)
         onClose();
+
+#ifdef USE_OPENXR
+    // Check that onOpen/onClose didn't reverse the change before forwarding it
+    // to the VR GUI manager.
+    if (this->isVisible() == visible)
+    {
+        MWVR::VRGUIManager::instance().setVisible(this, visible);
+    }
+#endif
 }
 
 bool WindowBase::isVisible()
@@ -111,26 +124,42 @@ void NoDrop::onFrame(float dt)
 
     MyGUI::IntPoint mousePos = MyGUI::InputManager::getInstance().getMousePosition();
 
+#ifdef USE_OPENXR
+    // Since VR mode stretches some windows to full screen, the usual outside condition
+    // won't work
+    mTransparent = false;
+#endif
     if (mDrag->mIsOnDragAndDrop)
     {
         MyGUI::Widget* focus = MyGUI::InputManager::getInstance().getMouseFocusWidget();
         while (focus && focus != mWidget)
+        {
             focus = focus->getParent();
+        }
 
         if (focus == mWidget)
+        {
             mTransparent = true;
+        }
     }
     if (!mWidget->getAbsoluteCoord().inside(mousePos))
         mTransparent = false;
 
     if (mTransparent)
     {
+#ifndef USE_OPENXR
+        // These makes focus null, which messes up the logic for VR
+        // since i reset mTransparent to false every update.
+        // TODO: Is there a cleaner way?
         mWidget->setNeedMouseFocus(false); // Allow click-through
+#endif
         setAlpha(std::max(0.13f, mWidget->getAlpha() - dt * 5));
     }
     else
     {
-        mWidget->setNeedMouseFocus(true);
+#ifndef USE_OPENXR
+        mWidget->setNeedMouseFocus(true); // Allow click-through
+#endif
         setAlpha(std::min(1.0f, mWidget->getAlpha() + dt * 5));
     }
 }

@@ -11,14 +11,16 @@
 namespace SDLUtil
 {
 
-    VideoWrapper::VideoWrapper(SDL_Window* window, osg::ref_ptr<osgViewer::Viewer> viewer)
+    VideoWrapper::VideoWrapper(SDL_Window* window, osg::ref_ptr<osgViewer::Viewer> viewer, bool shouldManageGamma)
         : mWindow(window)
         , mViewer(viewer)
         , mGamma(1.f)
         , mContrast(1.f)
+        , mShouldManageGamma(shouldManageGamma)
         , mHasSetGammaContrast(false)
     {
-        SDL_GetWindowGammaRamp(mWindow, mOldSystemGammaRamp, &mOldSystemGammaRamp[256], &mOldSystemGammaRamp[512]);
+        if (mShouldManageGamma)
+            SDL_GetWindowGammaRamp(mWindow, mOldSystemGammaRamp, &mOldSystemGammaRamp[256], &mOldSystemGammaRamp[512]);
     }
 
     VideoWrapper::~VideoWrapper()
@@ -26,7 +28,7 @@ namespace SDLUtil
         SDL_SetWindowFullscreen(mWindow, 0);
 
         // If user hasn't touched the defaults no need to restore
-        if (mHasSetGammaContrast)
+        if (mShouldManageGamma && mHasSetGammaContrast)
             SDL_SetWindowGammaRamp(mWindow, mOldSystemGammaRamp, &mOldSystemGammaRamp[256], &mOldSystemGammaRamp[512]);
     }
 
@@ -61,6 +63,9 @@ namespace SDLUtil
         mContrast = contrast;
 
         mHasSetGammaContrast = true;
+
+        if (!mShouldManageGamma)
+            return;
 
         Uint16 red[256], green[256], blue[256];
         for (int i = 0; i < 256; i++)

@@ -11,6 +11,11 @@ namespace MWState
     struct Slot;
 }
 
+namespace MWVR
+{
+    class VrListBox;
+}
+
 namespace MWGui
 {
 
@@ -31,6 +36,7 @@ namespace MWGui
         void onCancelButtonClicked(MyGUI::Widget* sender);
         void onOkButtonClicked(MyGUI::Widget* sender);
         void onDeleteButtonClicked(MyGUI::Widget* sender);
+        void onCharacterSelectionButtonClicked(MyGUI::Widget* sender);
         void onCharacterSelected(MyGUI::ComboBox* sender, size_t pos);
         void onCharacterAccept(MyGUI::ComboBox* sender, size_t pos);
         // Slot selected (mouse click or arrow keys)
@@ -57,6 +63,10 @@ namespace MWGui
         bool mSaving;
 
         MyGUI::ComboBox* mCharacterSelection;
+#ifdef USE_OPENXR
+        MWVR::VrListBox* mCharacterSelectionListBox;
+#endif
+        MyGUI::Button* mCharacterSelectionButton;
         MyGUI::EditBox* mInfoText;
         MyGUI::Button* mOkButton;
         MyGUI::Button* mCancelButton;

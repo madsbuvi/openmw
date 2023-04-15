@@ -11,6 +11,7 @@
 #include <stack>
 #include <vector>
 
+#include <osg/Vec4>
 #include <osg/ref_ptr>
 
 #include "../mwbase/windowmanager.hpp"
@@ -85,6 +86,13 @@ namespace SceneUtil
 namespace Gui
 {
     class FontLoader;
+    class VirtualKeyboardManager;
+}
+
+namespace MWVR
+{
+    class VrMetaMenu;
+    class RadialMenu;
 }
 
 namespace MWGui
@@ -141,6 +149,7 @@ namespace MWGui
         /// @note This method will block until the video finishes playing
         /// (and will continually update the window while doing so)
         void playVideo(std::string_view name, bool allowSkipping, bool overrideSounds = true) override;
+        bool isPlayingVideo(void) const override;
 
         /// Warning: do not use MyGUI::InputManager::setKeyFocusWidget directly. Instead use this.
         void setKeyFocusWidget(MyGUI::Widget* widget) override;
@@ -167,7 +176,7 @@ namespace MWGui
 
         void forceHide(MWGui::GuiWindow wnd) override;
         void unsetForceHide(MWGui::GuiWindow wnd) override;
-
+        DragAndDrop& getDragAndDrop(void) override;
         /// Disallow all inventory mode windows
         void disallowAll() override;
 
@@ -275,7 +284,7 @@ namespace MWGui
         int readPressedButton() override; ///< returns the index of the pressed button or -1 if no button was pressed
                                           ///< (->MessageBoxmanager->InteractiveMessageBox)
 
-        void update(float duration);
+        void update(float duration) override;
 
         /**
          * Fetches a GMST string from the store, if there is no setting with the given
@@ -387,13 +396,16 @@ namespace MWGui
         void onDeleteCustomData(const MWWorld::Ptr& ptr) override;
         void forceLootMode(const MWWorld::Ptr& ptr) override;
 
+        void viewerTraversals() override;
         void asyncPrepareSaveMap() override;
 
     private:
         unsigned int mOldUpdateMask;
         unsigned int mOldCullMask;
+        osg::Vec4 mOldClearColor;
 
         const MWWorld::ESMStore* mStore;
+        bool mVRMode;
         Resource::ResourceSystem* mResourceSystem;
         osg::ref_ptr<SceneUtil::WorkQueue> mWorkQueue;
 
@@ -450,6 +462,10 @@ namespace MWGui
         PostProcessorHud* mPostProcessorHud;
         JailScreen* mJailScreen;
         ContainerWindow* mContainerWindow;
+        MWVR::VrMetaMenu* mVrMetaMenu;
+        MWVR::RadialMenu* mRadialMenu;
+
+        Gui::VirtualKeyboardManager* mVirtualKeyboardManager;
 
         std::vector<std::unique_ptr<WindowBase>> mWindows;
 
@@ -466,6 +482,7 @@ namespace MWGui
         bool mHudEnabled;
         bool mCursorVisible;
         bool mCursorActive;
+        bool mVideoEnabled;
 
         int mPlayerBounty;
 
@@ -589,6 +606,10 @@ namespace MWGui
         uint32_t getCullMask() override;
 
         Files::ConfigurationManager& mCfgMgr;
+        void enterVoid() override;
+        void exitVoid() override;
+
+        bool mTheVoid = false;
     };
 }
 

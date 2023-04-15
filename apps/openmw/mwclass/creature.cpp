@@ -24,6 +24,7 @@
 #include "../mwmechanics/setbaseaisetting.hpp"
 
 #include "../mwbase/environment.hpp"
+#include "../mwbase/inputmanager.hpp"
 #include "../mwbase/mechanicsmanager.hpp"
 #include "../mwbase/soundmanager.hpp"
 #include "../mwbase/windowmanager.hpp"
@@ -365,8 +366,10 @@ namespace MWClass
         victim.getClass().onHit(victim, damage, healthdmg, weapon, ptr, hitPosition, true);
     }
 
+
     void Creature::onHit(const MWWorld::Ptr& ptr, float damage, bool ishealth, const MWWorld::Ptr& object,
-        const MWWorld::Ptr& attacker, const osg::Vec3f& hitPosition, bool successful) const
+        const MWWorld::Ptr& attacker, const osg::Vec3f& hitPosition, bool successful,
+        [[maybe_unused]] float hitStrength) const
     {
         MWMechanics::CreatureStats& stats = getCreatureStats(ptr);
 
@@ -461,6 +464,15 @@ namespace MWClass
                 MWMechanics::DynamicStat<float> fatigue(stats.getFatigue());
                 fatigue.setCurrent(fatigue.getCurrent() - damage, true);
                 stats.setFatigue(fatigue);
+            }
+        }
+
+        if (successful)
+        {
+            if (attacker == MWMechanics::getPlayer() && hitStrength > 0.f)
+            {
+                float hapticIntensity = std::max(0.25f, std::min(1.f, hitStrength));
+                MWBase::Environment::get().getInputManager()->applyHapticsRightHand(hapticIntensity);
             }
         }
     }

@@ -20,6 +20,7 @@
 
 #include "../mwbase/dialoguemanager.hpp"
 #include "../mwbase/environment.hpp"
+#include "../mwbase/inputmanager.hpp"
 #include "../mwbase/luamanager.hpp"
 #include "../mwbase/mechanicsmanager.hpp"
 #include "../mwbase/soundmanager.hpp"
@@ -554,6 +555,7 @@ namespace MWClass
         return ptr.getRefData().getCustomData()->asNpcCustomData().mNpcStats;
     }
 
+    // MERGETODO: same as in creature.cpp
     bool Npc::evaluateHit(const MWWorld::Ptr& ptr, MWWorld::Ptr& victim, osg::Vec3f& hitPosition) const
     {
         victim = MWWorld::Ptr();
@@ -707,11 +709,12 @@ namespace MWClass
     }
 
     void Npc::onHit(const MWWorld::Ptr& ptr, float damage, bool ishealth, const MWWorld::Ptr& object,
-        const MWWorld::Ptr& attacker, const osg::Vec3f& hitPosition, bool successful) const
+        const MWWorld::Ptr& attacker, const osg::Vec3f& hitPosition, bool successful, float hitStrength) const
     {
         MWBase::SoundManager* sndMgr = MWBase::Environment::get().getSoundManager();
         MWMechanics::CreatureStats& stats = getCreatureStats(ptr);
         bool wasDead = stats.isDead();
+        float rawDamage = damage;
 
         // Note OnPcHitMe is not set for friendly hits.
         bool setOnPcHitMe = true;
@@ -912,6 +915,23 @@ namespace MWClass
             }
 
             MWBase::Environment::get().getMechanicsManager()->actorKilled(ptr, attacker);
+        }
+
+        // Apply haptics
+        if (successful)
+        {
+            auto inputManager = MWBase::Environment::get().getInputManager();
+            if (ptr == MWMechanics::getPlayer())
+            {
+                float maxHealth = getCreatureStats(ptr).getHealth().getModified();
+                float hapticIntensity = std::max(0.25f, std::min(1.f, rawDamage / (maxHealth / 4.f)));
+                inputManager->applyHapticsLeftHand(hapticIntensity);
+            }
+            else if (attacker == MWMechanics::getPlayer() && hitStrength > 0.f)
+            {
+                float hapticIntensity = std::max(0.25f, std::min(1.f, hitStrength));
+                inputManager->applyHapticsRightHand(hapticIntensity);
+            }
         }
     }
 

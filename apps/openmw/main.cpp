@@ -5,6 +5,7 @@
 #include <components/misc/rng.hpp>
 #include <components/platform/platform.hpp>
 #include <components/version/version.hpp>
+#include <components/vr/vr.hpp>
 
 #include "mwgui/debugwindow.hpp"
 
@@ -238,6 +239,10 @@ int runApplication(int argc, char* argv[])
     std::filesystem::path binary_path = std::filesystem::absolute(std::filesystem::path(argv[0]));
     std::filesystem::current_path(binary_path.parent_path());
     setenv("OSG_GL_TEXTURE_STORAGE", "OFF", 0);
+#endif
+
+#ifdef USE_OPENXR
+    VR::setVR(true);
 #endif
 
     osg::setNotifyHandler(new OSGLogHandler());

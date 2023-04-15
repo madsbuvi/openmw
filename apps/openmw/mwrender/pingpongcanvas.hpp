@@ -22,6 +22,16 @@ namespace MWRender
     class PingPongCanvas : public osg::Geometry
     {
     public:
+        class PingPongCallback
+        {
+        public:
+            virtual ~PingPongCallback(){};
+
+            virtual void pingPongBegin(size_t frameId, osg::State& state, const PingPongCanvas& canvas) = 0;
+            virtual void pingPongEnd(size_t frameId, osg::State& state, const PingPongCanvas& canvas) = 0;
+        };
+
+    public:
         PingPongCanvas(Shader::ShaderManager& shaderManager);
 
         void drawImplementation(osg::RenderInfo& renderInfo) const override;
@@ -63,6 +73,19 @@ namespace MWRender
 
         void drawGeometry(osg::RenderInfo& renderInfo) const;
 
+        void setDestinationFbo(size_t frameId, osg::ref_ptr<osg::FrameBufferObject> fbo) const
+        {
+            mBufferData[frameId].destination = fbo;
+        }
+        void setDestinationViewport(size_t frameId, osg::ref_ptr<osg::Viewport> viewport) const
+        {
+            mBufferData[frameId].destinationViewport = viewport;
+        }
+
+        osg::ref_ptr<osg::Texture> getDepthTexture(size_t frameId) const { return mBufferData[frameId].depthTex; }
+
+        void setPingPongCallback(std::unique_ptr<PingPongCallback> cb);
+
     private:
         void copyNewFrameData(size_t frameId) const;
 
@@ -84,6 +107,7 @@ namespace MWRender
             fx::FlagsType mask;
 
             osg::ref_ptr<osg::FrameBufferObject> destination;
+            osg::ref_ptr<osg::Viewport> destinationViewport;
 
             osg::ref_ptr<osg::Texture> sceneTex;
             osg::ref_ptr<osg::Texture> depthTex;
@@ -94,6 +118,8 @@ namespace MWRender
         mutable std::array<BufferData, 2> mBufferData;
         mutable std::array<osg::ref_ptr<osg::FrameBufferObject>, 3> mFbos;
         mutable osg::ref_ptr<osg::Viewport> mRenderViewport;
+
+        std::unique_ptr<PingPongCallback> mPingPongCallback;
     };
 }
 

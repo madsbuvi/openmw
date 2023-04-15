@@ -8,6 +8,7 @@
 #include <components/debug/debuglog.hpp>
 #include <components/files/conversion.hpp>
 #include <components/sdlutil/sdlmappings.hpp>
+#include <components/vr/vr.hpp>
 
 #include "../mwbase/environment.hpp"
 #include "../mwbase/inputmanager.hpp"
@@ -17,6 +18,10 @@
 #include "../mwbase/world.hpp"
 
 #include "../mwworld/player.hpp"
+
+#ifdef USE_OPENXR
+#include "../mwvr/vrinputmanager.hpp"
+#endif
 
 #include "actionmanager.hpp"
 #include "actions.hpp"
@@ -35,6 +40,8 @@ namespace MWInput
         , mGamepadGuiCursorEnabled(true)
         , mGuiCursorEnabled(true)
         , mJoystickLastUsed(false)
+        , mThumbstickAutoRun(Settings::Manager::getBool("thumbstick auto run", "Input"))
+        , mThumbstickRightActive(false)
     {
         if (!controllerBindingsFile.empty())
         {
@@ -111,12 +118,46 @@ namespace MWInput
             float xAxis = mBindingsManager->getActionValue(A_MoveLeftRight);
             float yAxis = mBindingsManager->getActionValue(A_MoveForwardBackward);
             if (xAxis != 0.5 || yAxis != 0.5)
+            // MERGETODO: More things that don't fit in anywhere anymore.
+            float scale = 1.f;
+
+            if (VR::getVR() && !mThumbstickAutoRun)
+            {
+                bool isRunningAllowed
+                    = (mBindingsManager->actionIsActive(A_Run) || mActionManager->isAlwaysRunActive());
+                if (!isRunningAllowed)
+                {
+                    auto l = osg::Vec2f(xAxis * 2 - 1, yAxis * 2 - 1).length();
+                    if (l > 0.5f)
+                    {
+                        scale = l / 0.5f;
+                    }
+                }
+            }
+
+                player.setLeftRight((xAxis - 0.5f) * 2 / scale);
+                player.setForwardBackward((0.5f - yAxis) * 2 / scale);
             {
                 mJoystickLastUsed = true;
                 MWBase::Environment::get().getInputManager()->resetIdleTime();
             }
+                if (mJoystickLastUsed && !(VR::getVR()))
         }
     }
+                {
+                    if (mActionManager->isSneaking())
+                    {
+                        if (mBindingsManager->actionIsActive(A_Sneak))
+                        {
+                            mActionManager->toggleSneaking();
+                            player.setSneak(mBindingsManager->actionIsActive(A_Sneak));
+                        }
+                    }
+                    else
+                        player.setSneak(mBindingsManager->actionIsActive(A_Sneak));
+                }
+            }
+        }
 
     void ControllerManager::buttonPressed(int deviceID, const SDL_ControllerButtonEvent& arg)
     {
@@ -208,6 +249,17 @@ namespace MWInput
 
     void ControllerManager::axisMoved(int deviceID, const SDL_ControllerAxisEvent& arg)
     {
+#ifdef USE_OPENXR
+        if (VR::getVR() && !MWBase::Environment::get().getWindowManager()->isGuiMode())
+        {
+            if (arg.axis == SDL_CONTROLLER_AXIS_RIGHTY)
+            {
+                float value = static_cast<float>(arg.value) / (arg.value < 0 ? 32768.f : 32767.f);
+                MWVR::VRInputManager::instance().processUtilityStickY(-value);
+            }
+        }
+#endif
+
         if (!mJoystickEnabled || MWBase::Environment::get().getInputManager()->controlsDisabled())
             return;
 
@@ -370,6 +422,12 @@ namespace MWInput
             SDL_GameControllerGetSensorData(cntrl, SDL_SENSOR_GYRO, gyro, 3);
 #endif
         return std::array<float, 3>({ gyro[0], gyro[1], gyro[2] });
+    }
+
+    void ControllerManager::setThumbstickAutoRun(bool enabled)
+    {
+        mThumbstickAutoRun = enabled;
+        Settings::Manager::setBool("thumbstick auto run", "Input", enabled);
     }
 
     void ControllerManager::touchpadMoved(int deviceId, const SDLUtil::TouchEvent& arg)

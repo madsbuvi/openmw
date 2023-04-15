@@ -588,7 +588,7 @@ namespace MWGui
                     requestMapRender(&MWBase::Environment::get().getWorldModel()->getExterior(
                         ESM::ExteriorCellLocation(entry.mCellX, entry.mCellY, ESM::Cell::sDefaultWorldspaceId)));
 
-                osg::ref_ptr<osg::Texture2D> texture = mLocalMapRender->getMapTexture(entry.mCellX, entry.mCellY);
+                osg::ref_ptr<osg::Texture> texture = mLocalMapRender->getMapTexture(entry.mCellX, entry.mCellY);
                 if (texture)
                 {
                     entry.mMapTexture = std::make_unique<osgMyGUI::OSGTexture>(texture);
@@ -601,7 +601,7 @@ namespace MWGui
             }
             if (!entry.mFogTexture && mFogOfWarToggled && mFogOfWarEnabled)
             {
-                osg::ref_ptr<osg::Texture2D> tex = mLocalMapRender->getFogOfWarTexture(entry.mCellX, entry.mCellY);
+                osg::ref_ptr<osg::Texture> tex = mLocalMapRender->getFogOfWarTexture(entry.mCellX, entry.mCellY);
                 if (tex)
                 {
                     entry.mFogTexture = std::make_unique<osgMyGUI::OSGTexture>(tex);

@@ -94,6 +94,9 @@ namespace SDLUtil
             SDL_Window* mWindow;
         };
 
+        /** Convenience function for finding the context among the main camera or slaves */
+        static osg::GraphicsContext* findContext(osgViewer::View& view);
+
     private:
         void setSwapInterval(VSyncMode mode);
     };

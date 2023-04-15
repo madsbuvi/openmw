@@ -354,7 +354,7 @@ namespace Stereo
         if (!projUniform)
         {
             projUniform = new osg::Uniform(osg::Uniform::FLOAT_MAT4, "projectionMatrixMultiView", 2);
-            stateset->addUniform(projUniform, osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
+            stateset->addUniform(projUniform, osg::StateAttribute::ON | osg::StateAttribute::PROTECTED);
         }
 
         projUniform->setElement(0, projection[0]);
@@ -366,7 +366,7 @@ namespace Stereo
             if (!invUniform)
             {
                 invUniform = new osg::Uniform(osg::Uniform::FLOAT_MAT4, "invProjectionMatrixMultiView", 2);
-                stateset->addUniform(invUniform, osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
+                stateset->addUniform(invUniform, osg::StateAttribute::ON | osg::StateAttribute::PROTECTED);
             }
 
             invUniform->setElement(0, osg::Matrix::inverse(projection[0]));
@@ -464,6 +464,37 @@ namespace Stereo
             default:
                 throw std::logic_error("Invalid texture type received");
         }
+    }
+
+    osg::FrameBufferAttachment createLayerAttachmentFromHandle(osg::State* state, uint32_t handle, uint32_t target,
+        uint32_t width, uint32_t height, [[maybe_unused]] uint32_t layer)
+    {
+        // Wrap subimage textures in texture objects, and attach them to a framebuffer object
+        if (target == GL_TEXTURE_2D)
+        {
+            auto texture2D = new osg::Texture2D();
+            texture2D->setTextureSize(width, height);
+            texture2D->setFilter(osg::Texture::MIN_FILTER, osg::Texture::LINEAR);
+            texture2D->setFilter(osg::Texture::MAG_FILTER, osg::Texture::LINEAR);
+
+            auto textureObject = new osg::Texture::TextureObject(texture2D, handle, GL_TEXTURE_2D);
+            texture2D->setTextureObject(state->getContextID(), textureObject);
+            return osg::FrameBufferAttachment(texture2D);
+        }
+#ifdef OSG_HAS_MULTIVIEW
+        else if (target == GL_TEXTURE_2D_ARRAY)
+        {
+            auto texture2DArray = new osg::Texture2DArray();
+            texture2DArray->setTextureSize(width, height, 2);
+            texture2DArray->setFilter(osg::Texture::MIN_FILTER, osg::Texture::LINEAR);
+            texture2DArray->setFilter(osg::Texture::MAG_FILTER, osg::Texture::LINEAR);
+
+            auto textureObject = new osg::Texture::TextureObject(texture2DArray, handle, GL_TEXTURE_2D_ARRAY);
+            texture2DArray->setTextureObject(state->getContextID(), textureObject);
+            return osg::FrameBufferAttachment(texture2DArray, layer);
+        }
+#endif
+        return osg::FrameBufferAttachment();
     }
 
     unsigned int osgFaceControlledByMultiviewShader()

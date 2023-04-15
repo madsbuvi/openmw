@@ -53,6 +53,7 @@ namespace osgMyGUI
         std::unique_ptr<MyGUI::LogManager> mLogManager;
         std::unique_ptr<DataManager> mDataManager;
         std::unique_ptr<RenderManager> mRenderManager;
+        bool mVRMode;
     };
 
 }

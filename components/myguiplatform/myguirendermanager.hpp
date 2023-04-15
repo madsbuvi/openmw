@@ -4,6 +4,7 @@
 #include <MyGUI_RenderManager.h>
 
 #include <osg/ref_ptr>
+#include <set>
 
 namespace Resource
 {
@@ -26,35 +27,45 @@ namespace osg
     class Camera;
     class RenderInfo;
     class StateSet;
+    class Program;
 }
 
 namespace osgMyGUI
 {
 
     class Drawable;
+    class GUICamera;
     class OSGTexture;
 
-    class RenderManager : public MyGUI::RenderManager, public MyGUI::IRenderTarget
+    class StateInjectableRenderTarget : public MyGUI::IRenderTarget
+    {
+    public:
+        StateInjectableRenderTarget() = default;
+        ~StateInjectableRenderTarget() = default;
+
+        /** specify a StateSet to inject for rendering. The StateSet will be used by future doRender calls until you
+         * reset it to nullptr again. */
+        void setInjectState(osg::StateSet* stateSet);
+
+    protected:
+        osg::StateSet* mInjectState{ nullptr };
+    };
+
+    class RenderManager : public MyGUI::RenderManager
     {
         osg::ref_ptr<osgViewer::Viewer> mViewer;
+        osg::ref_ptr<osg::StateSet> mGuiStateSet;
         osg::ref_ptr<osg::Group> mSceneRoot;
-        osg::ref_ptr<Drawable> mDrawable;
         Resource::ImageManager* mImageManager;
-
         MyGUI::IntSize mViewSize;
-        bool mUpdate;
+
         MyGUI::VertexColourType mVertexFormat;
-        MyGUI::RenderTargetInfo mInfo;
 
         std::map<std::string, OSGTexture> mTextures;
 
         bool mIsInitialise;
 
-        osg::ref_ptr<osg::Camera> mGuiRoot;
-
         float mInvScalingFactor;
-
-        osg::StateSet* mInjectState;
 
     public:
         RenderManager(osgViewer::Viewer* viewer, osg::Group* sceneroot, Resource::ImageManager* imageManager,
@@ -65,8 +76,6 @@ namespace osgMyGUI
         void shutdown();
 
         void enableShaders(Shader::ShaderManager& shaderManager);
-
-        void setScalingFactor(float factor);
 
         static RenderManager& getInstance() { return *getInstancePtr(); }
         static RenderManager* getInstancePtr()
@@ -98,21 +107,6 @@ namespace osgMyGUI
         // Called by the update traversal
         void update();
 
-        // Called by the cull traversal
-        /** @see IRenderTarget::begin */
-        void begin() override;
-        /** @see IRenderTarget::end */
-        void end() override;
-        /** @see IRenderTarget::doRender */
-        void doRender(MyGUI::IVertexBuffer* buffer, MyGUI::ITexture* texture, size_t count) override;
-
-        /** specify a StateSet to inject for rendering. The StateSet will be used by future doRender calls until you
-         * reset it to nullptr again. */
-        void setInjectState(osg::StateSet* stateSet);
-
-        /** @see IRenderTarget::getInfo */
-        const MyGUI::RenderTargetInfo& getInfo() const override { return mInfo; }
-
         bool checkTexture(MyGUI::ITexture* _texture);
 
         void setViewSize(int width, int height) override;
@@ -120,9 +114,7 @@ namespace osgMyGUI
         void registerShader(const std::string& _shaderName, const std::string& _vertexProgramFile,
             const std::string& _fragmentProgramFile) override;
 
-        /*internal:*/
-
-        void collectDrawCalls();
+        osg::ref_ptr<osg::Camera> createGUICamera(int order, std::string layerFilter);
     };
 
 }

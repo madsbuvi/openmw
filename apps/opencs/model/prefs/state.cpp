@@ -308,6 +308,9 @@ void CSMPrefs::State::declare()
             "selection.")
         .addValues(secondarySelectAction);
 
+    setDefaultHidden("stereo enabled", "Stereo", "false");
+    setDefaultHidden("multiview", "Stereo", "false");
+
     declareCategory("Key Bindings");
 
     declareSubcategory("Document");
@@ -638,6 +641,16 @@ void CSMPrefs::State::declareSubcategory(const std::string& label)
 void CSMPrefs::State::setDefault(const std::string& key, const std::string& default_)
 {
     Settings::CategorySetting fullKey(mCurrentCategory->second.getKey(), key);
+
+    Settings::CategorySettingValueMap::iterator iter = Settings::Manager::mDefaultSettings.find(fullKey);
+
+    if (iter == Settings::Manager::mDefaultSettings.end())
+        Settings::Manager::mDefaultSettings.insert(std::make_pair(fullKey, default_));
+}
+
+void CSMPrefs::State::setDefaultHidden(const std::string& key, const std::string& category, const std::string& default_)
+{
+    Settings::CategorySetting fullKey(category, key);
 
     Settings::CategorySettingValueMap::iterator iter = Settings::Manager::mDefaultSettings.find(fullKey);
 

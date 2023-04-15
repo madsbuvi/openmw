@@ -11,6 +11,7 @@
 #include <components/l10n/manager.hpp>
 #include <components/misc/resourcehelpers.hpp>
 #include <components/settings/settings.hpp>
+#include <components/vr/vr.hpp>
 #include <components/widgets/box.hpp>
 
 #include "../mwbase/environment.hpp"
@@ -34,7 +35,12 @@ namespace MWGui
         "#{sSchoolIllusion}", "#{sSchoolMysticism}", "#{sSchoolRestoration}" };
 
     ToolTips::ToolTips()
-        : Layout("openmw_tooltips.layout")
+        :
+#ifdef USE_OPENXR
+        Layout("openmw_tooltips_vr.layout")
+#else
+        Layout("openmw_tooltips.layout")
+#endif
         , mFocusToolTipX(0.0)
         , mFocusToolTipY(0.0)
         , mHorizontalScrollIndex(0)
@@ -56,7 +62,9 @@ namespace MWGui
         mDynamicToolTipBox->setNeedMouseFocus(false);
         mMainWidget->setNeedMouseFocus(false);
 
-        mDelay = Settings::Manager::getFloat("tooltip delay", "GUI");
+        // Tooltip delay is not useful in vr as a player cannot be perfectly still.
+        if (!VR::getVR())
+            mDelay = Settings::Manager::getFloat("tooltip delay", "GUI");
         mRemainingDelay = mDelay;
 
         for (unsigned int i = 0; i < mMainWidget->getChildCount(); ++i)
@@ -359,6 +367,15 @@ namespace MWGui
         mFocusObject = focus;
 
         update(mFrameDuration);
+
+        bool visible = false;
+        for (unsigned int i = 0; i < mMainWidget->getChildCount(); ++i)
+        {
+            visible |= mMainWidget->getChildAt(i)->getVisible();
+        }
+
+        if (visible != mMainWidget->getVisible())
+            setVisible(visible);
     }
 
     MyGUI::IntSize ToolTips::getToolTipViaPtr(int count, bool image, bool isOwned)

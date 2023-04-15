@@ -49,6 +49,9 @@ namespace MWGui
 
         virtual void onDeleteCustomData(const MWWorld::Ptr& ptr) {}
 
+        /// Called when Window widget changes in size
+        virtual void onWindowResize(MyGUI::Window* window) {}
+
     protected:
         virtual void onTitleDoubleClicked();
 

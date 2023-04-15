@@ -7,6 +7,8 @@ set(SDIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(DDIRRELATIVE resources/shaders)
 
 set(SHADER_FILES
+    3dgui_vertex.glsl
+    3dgui_fragment.glsl
     lib/water/fresnel.glsl
     lib/water/rain_ripples.glsl
     lib/water/ripples.glsl
@@ -50,6 +52,8 @@ set(SHADER_FILES
     compatibility/depthclipped.vert
     compatibility/depthclipped.frag
     compatibility/gui.vert
+    # MERGETODO: multiview_fragment.glsl
+    # MERGETODO: multiview_vertex.glsl
     compatibility/gui.frag
     compatibility/debug.vert
     compatibility/debug.frag

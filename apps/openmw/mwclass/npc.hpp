@@ -76,13 +76,15 @@ namespace MWClass
 
         bool hasInventoryStore(const MWWorld::Ptr& ptr) const override { return true; }
 
+        // MERGETODO: same as in create.hpp
         bool evaluateHit(const MWWorld::Ptr& ptr, MWWorld::Ptr& victim, osg::Vec3f& hitPosition) const override;
 
         void hit(const MWWorld::Ptr& ptr, float attackStrength, int type, const MWWorld::Ptr& victim,
             const osg::Vec3f& hitPosition, bool success) const override;
 
         void onHit(const MWWorld::Ptr& ptr, float damage, bool ishealth, const MWWorld::Ptr& object,
-            const MWWorld::Ptr& attacker, const osg::Vec3f& hitPosition, bool successful) const override;
+            const MWWorld::Ptr& attacker, const osg::Vec3f& hitPosition, bool successful,
+            float hitStrength) const override;
 
         void getModelsToPreload(const MWWorld::Ptr& ptr, std::vector<std::string>& models) const override;
         ///< Get a list of models to preload that this object may use (directly or indirectly). default implementation:

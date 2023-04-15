@@ -6,6 +6,7 @@
 
 #include <MyGUI_ComboBox.h>
 #include <MyGUI_ControllerItem.h>
+#include <MyGUI_ListBox.h>
 
 #include <components/widgets/box.hpp>
 #include <components/widgets/numericeditbox.hpp>
@@ -13,6 +14,11 @@
 #include "windowbase.hpp"
 
 #include "../mwmechanics/alchemy.hpp"
+
+namespace MWVR
+{
+    class VrListBox;
+}
 
 namespace MWGui
 {
@@ -54,9 +60,17 @@ namespace MWGui
         MyGUI::Button* mIncreaseButton;
         MyGUI::Button* mDecreaseButton;
         Gui::AutoSizedButton* mFilterType;
-        MyGUI::ComboBox* mFilterValue;
+        MyGUI::ComboBox* mFilterCombo;
+        MyGUI::EditBox* mFilterEdit;
+        MyGUI::Button* mFilterButton;
+#ifdef USE_OPENXR
+        MWVR::VrListBox* mFilterListBox = nullptr;
+#endif
         MyGUI::EditBox* mNameEdit;
         Gui::NumericEditBox* mBrewCountEdit;
+
+        std::set<std::string> mItemNames;
+        std::set<std::string> mItemEffects;
 
         void onCancelButtonClicked(MyGUI::Widget* _sender);
         void onCreateButtonClicked(MyGUI::Widget* _sender);
@@ -72,8 +86,10 @@ namespace MWGui
         void initFilter();
         void onFilterChanged(MyGUI::ComboBox* _sender, size_t _index);
         void onFilterEdited(MyGUI::EditBox* _sender);
+        void onFilterButtonClicked(MyGUI::Widget* _sender);
         void switchFilterType(MyGUI::Widget* _sender);
         void updateFilters();
+        const std::set<std::string>& items();
 
         void addRepeatController(MyGUI::Widget* widget);
 

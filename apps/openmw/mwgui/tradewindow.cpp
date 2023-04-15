@@ -47,7 +47,11 @@ namespace
 namespace MWGui
 {
     TradeWindow::TradeWindow()
+#ifdef USE_OPENXR
+        : WindowBase("openmw_trade_window_vr.layout")
+#else
         : WindowBase("openmw_trade_window.layout")
+#endif
         , mSortModel(nullptr)
         , mTradeModel(nullptr)
         , mItemToSell(-1)

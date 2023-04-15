@@ -45,7 +45,7 @@ namespace MWInput
     /**
      * @brief Class that provides a high-level API for game input
      */
-    class InputManager final : public MWBase::InputManager
+    class InputManager : public MWBase::InputManager
     {
     public:
         InputManager(SDL_Window* window, osg::ref_ptr<osgViewer::Viewer> viewer,
@@ -55,7 +55,7 @@ namespace MWInput
             const std::filesystem::path& userControllerBindingsFile,
             const std::filesystem::path& controllerBindingsFile, bool grab);
 
-        ~InputManager() final;
+        virtual ~InputManager();
 
         /// Clear all savegame-specific data
         void clear() override;
@@ -103,14 +103,16 @@ namespace MWInput
         void executeAction(int action) override;
 
         bool controlsDisabled() override { return mControlsDisabled; }
+        void applyHapticsLeftHand(float intensity) override{};
+        void applyHapticsRightHand(float intensity) override{};
 
-    private:
+    protected:
         void convertMousePosForMyGUI(int& x, int& y);
 
         void handleGuiArrowKey(int action);
 
-        void quickKey(int index);
-        void showQuickKeysMenu();
+        // void quickKey(int index);
+        // void showQuickKeysMenu();
 
         void loadKeyDefaults(bool force = false);
         void loadControllerDefaults(bool force = false);

@@ -125,8 +125,7 @@ namespace Stereo
     };
 
     Manager::Manager(osgViewer::Viewer* viewer)
-        : mViewer(viewer)
-        , mMainCamera(mViewer->getCamera())
+        : mMainCamera(viewer->getCamera())
         , mUpdateCallback(new StereoUpdateCallback(this))
         , mMasterProjectionMatrix(osg::Matrixd::identity())
         , mEyeResolutionOverriden(false)
@@ -155,7 +154,7 @@ namespace Stereo
     void Manager::initializeStereo(osg::GraphicsContext* gc)
     {
         mMainCamera->addUpdateCallback(mUpdateCallback);
-        mFrustumManager = std::make_unique<StereoFrustumManager>(mViewer->getCamera());
+        mFrustumManager = std::make_unique<StereoFrustumManager>(mMainCamera);
 
         auto ci = gc->getState()->getContextID();
         configureExtensions(ci);
@@ -165,10 +164,10 @@ namespace Stereo
         else
             setupBruteForceTechnique();
 
-        updateStereoFramebuffer();
+        updateMultiviewFramebuffer();
     }
 
-    void Manager::shaderStereoDefines(Shader::ShaderManager::DefineMap& defines) const
+    void shaderStereoDefines(Shader::ShaderManager::DefineMap& defines)
     {
         if (getMultiview())
         {
@@ -187,13 +186,13 @@ namespace Stereo
         mEyeResolutionOverride = eyeResolution;
         mEyeResolutionOverriden = true;
 
-        // if (mMultiviewFramebuffer)
-        //     updateStereoFramebuffer();
+        if (mMultiviewFramebuffer)
+            updateMultiviewFramebuffer();
     }
 
     void Manager::screenResolutionChanged()
     {
-        updateStereoFramebuffer();
+        updateMultiviewFramebuffer();
     }
 
     osg::Vec2i Manager::eyeResolution()
@@ -290,21 +289,30 @@ namespace Stereo
         mMainCamera->addCullCallback(new MultiviewStereoStatesetUpdateCallback(this));
     }
 
-    void Manager::updateStereoFramebuffer()
+    void Manager::updateMultiviewFramebuffer()
     {
         // VR-TODO: in VR, still need to have this framebuffer attached before the postprocessor is created
-        // auto samples = Settings::Manager::getInt("antialiasing", "Video");
-        // auto eyeRes = eyeResolution();
+        auto samples = Settings::Manager::getInt("antialiasing", "Video");
+        auto eyeRes = eyeResolution();
 
-        // if (mMultiviewFramebuffer)
-        //     mMultiviewFramebuffer->detachFrom(mMainCamera);
-        // mMultiviewFramebuffer = std::make_shared<MultiviewFramebuffer>(static_cast<int>(eyeRes.x()),
-        // static_cast<int>(eyeRes.y()), samples);
-        // mMultiviewFramebuffer->attachColorComponent(SceneUtil::Color::colorSourceFormat(),
-        // SceneUtil::Color::colorSourceType(), SceneUtil::Color::colorInternalFormat());
-        // mMultiviewFramebuffer->attachDepthComponent(SceneUtil::AutoDepth::depthSourceFormat(),
-        // SceneUtil::AutoDepth::depthSourceType(), SceneUtil::AutoDepth::depthInternalFormat());
-        // mMultiviewFramebuffer->attachTo(mMainCamera);
+        if (mMultiviewFramebuffer && mMultiviewFramebufferIsAttached)
+        {
+            mMultiviewFramebuffer->detachFrom(mMainCamera);
+            mMultiviewFramebufferIsAttached = false;
+        }
+
+        mMultiviewFramebuffer = std::make_shared<MultiviewFramebuffer>(
+            static_cast<int>(eyeRes.x()), static_cast<int>(eyeRes.y()), samples);
+        mMultiviewFramebuffer->attachColorComponent(SceneUtil::Color::colorSourceFormat(),
+            SceneUtil::Color::colorSourceType(), SceneUtil::Color::colorInternalFormat());
+        mMultiviewFramebuffer->attachDepthComponent(SceneUtil::AutoDepth::depthSourceFormat(),
+            SceneUtil::AutoDepth::depthSourceType(), SceneUtil::AutoDepth::depthInternalFormat());
+
+        if (mShouldAttachMultiviewFramebufferToMainCamera)
+        {
+            mMultiviewFramebuffer->attachTo(mMainCamera);
+            mMultiviewFramebufferIsAttached = true;
+        }
     }
 
     void Manager::update()
@@ -318,10 +326,13 @@ namespace Stereo
         if (mUpdateViewCallback)
         {
             mUpdateViewCallback->updateView(mView[0], mView[1]);
+
             mViewOffsetMatrix[0] = mView[0].viewMatrix(true);
             mViewOffsetMatrix[1] = mView[1].viewMatrix(true);
+
             mProjectionMatrix[0] = mView[0].perspectiveMatrix(near_, far_, false);
             mProjectionMatrix[1] = mView[1].perspectiveMatrix(near_, far_, false);
+
             if (SceneUtil::AutoDepth::isReversed())
             {
                 mProjectionMatrixReverseZ[0] = mView[0].perspectiveMatrix(near_, far_, true);
@@ -374,11 +385,6 @@ namespace Stereo
         mUpdateViewCallback = cb;
     }
 
-    void Manager::setCullCallback(osg::ref_ptr<osg::NodeCallback> cb)
-    {
-        mMainCamera->setCullCallback(cb);
-    }
-
     osg::Matrixd Manager::computeEyeProjection(int view, bool reverseZ) const
     {
         return reverseZ ? mProjectionMatrixReverseZ[view] : mProjectionMatrix[view];
@@ -400,6 +406,12 @@ namespace Stereo
         return Eye::Center;
     }
 
+    void Manager::setShouldAttachMultiviewFramebufferToMainCamera(bool attach)
+    {
+        mShouldAttachMultiviewFramebufferToMainCamera = attach;
+        updateMultiviewFramebuffer();
+    }
+
     bool getStereo()
     {
         static bool stereo = Settings::Manager::getBool("stereo enabled", "Stereo")
@@ -409,9 +421,12 @@ namespace Stereo
 
     CustomViewCallback::CustomViewCallback()
     {
-        mLeft.pose.position.x() = Settings::Manager::getDouble("left eye offset x", "Stereo View");
-        mLeft.pose.position.y() = Settings::Manager::getDouble("left eye offset y", "Stereo View");
-        mLeft.pose.position.z() = Settings::Manager::getDouble("left eye offset z", "Stereo View");
+        mLeft.pose.position.mX
+            = Stereo::Unit::fromMeters(Settings::Manager::getDouble("left eye offset x", "Stereo View"));
+        mLeft.pose.position.mY
+            = Stereo::Unit::fromMeters(Settings::Manager::getDouble("left eye offset y", "Stereo View"));
+        mLeft.pose.position.mZ
+            = Stereo::Unit::fromMeters(Settings::Manager::getDouble("left eye offset z", "Stereo View"));
         mLeft.pose.orientation.x() = Settings::Manager::getDouble("left eye orientation x", "Stereo View");
         mLeft.pose.orientation.y() = Settings::Manager::getDouble("left eye orientation y", "Stereo View");
         mLeft.pose.orientation.z() = Settings::Manager::getDouble("left eye orientation z", "Stereo View");
@@ -421,9 +436,12 @@ namespace Stereo
         mLeft.fov.angleUp = Settings::Manager::getDouble("left eye fov up", "Stereo View");
         mLeft.fov.angleDown = Settings::Manager::getDouble("left eye fov down", "Stereo View");
 
-        mRight.pose.position.x() = Settings::Manager::getDouble("right eye offset x", "Stereo View");
-        mRight.pose.position.y() = Settings::Manager::getDouble("right eye offset y", "Stereo View");
-        mRight.pose.position.z() = Settings::Manager::getDouble("right eye offset z", "Stereo View");
+        mRight.pose.position.mX
+            = Stereo::Unit::fromMeters(Settings::Manager::getDouble("right eye offset x", "Stereo View"));
+        mRight.pose.position.mY
+            = Stereo::Unit::fromMeters(Settings::Manager::getDouble("right eye offset y", "Stereo View"));
+        mRight.pose.position.mZ
+            = Stereo::Unit::fromMeters(Settings::Manager::getDouble("right eye offset z", "Stereo View"));
         mRight.pose.orientation.x() = Settings::Manager::getDouble("right eye orientation x", "Stereo View");
         mRight.pose.orientation.y() = Settings::Manager::getDouble("right eye orientation y", "Stereo View");
         mRight.pose.orientation.z() = Settings::Manager::getDouble("right eye orientation z", "Stereo View");

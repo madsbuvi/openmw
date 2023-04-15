@@ -153,6 +153,20 @@ namespace LuaUi
         WidgetExtension* mParent;
         bool mTemplateChild;
 
+        MyGUI::EventHandle_WidgetKeyCodeChar::IDelegate* mEventKeyButtonPressed = nullptr;
+        MyGUI::EventHandle_WidgetKeyCode::IDelegate* mEventKeyButtonReleased = nullptr;
+        MyGUI::EventHandle_WidgetVoid::IDelegate* mEventMouseButtonClick = nullptr;
+        MyGUI::EventHandle_WidgetVoid::IDelegate* mEventMouseButtonDoubleClick = nullptr;
+        MyGUI::EventHandle_WidgetIntIntButton::IDelegate* mEventMouseButtonPressed = nullptr;
+        MyGUI::EventHandle_WidgetIntIntButton::IDelegate* mEventMouseButtonReleased = nullptr;
+        MyGUI::EventHandle_WidgetIntInt::IDelegate* mEventMouseMove = nullptr;
+        MyGUI::EventHandle_WidgetIntIntButton::IDelegate* mEventMouseDrag = nullptr;
+        MyGUI::EventHandle_WidgetWidget::IDelegate* mEventMouseSetFocus = nullptr;
+        MyGUI::EventHandle_WidgetWidget::IDelegate* mEventMouseLostFocus = nullptr;
+        MyGUI::EventHandle_WidgetWidget::IDelegate* mEventKeySetFocusDelegate = nullptr;
+        MyGUI::EventHandle_WidgetWidget::IDelegate* mEventKeyLostFocusDelegate = nullptr;
+        bool mEventsInitialized = false;
+
         void attach(WidgetExtension* ext);
         void attachTemplate(WidgetExtension* ext);
 

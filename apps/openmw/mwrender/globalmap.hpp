@@ -9,6 +9,7 @@
 
 namespace osg
 {
+    class Texture;
     class Texture2D;
     class Image;
     class Group;
@@ -43,7 +44,7 @@ namespace MWRender
 
         void worldPosToImageSpace(float x, float z, float& imageX, float& imageY);
 
-        void exploreCell(int cellX, int cellY, osg::ref_ptr<osg::Texture2D> localMapTexture);
+        void exploreCell(int cellX, int cellY, osg::ref_ptr<osg::Texture> localMapTexture);
 
         /// Clears the overlay
         void clear();
@@ -82,7 +83,7 @@ namespace MWRender
          * x, y, width and height are the destination coordinates (top-left coordinate origin)
          * @param cpuCopy copy the resulting render onto mOverlayImage as well?
          */
-        void requestOverlayTextureUpdate(int x, int y, int width, int height, osg::ref_ptr<osg::Texture2D> texture,
+        void requestOverlayTextureUpdate(int x, int y, int width, int height, osg::ref_ptr<osg::Texture> texture,
             bool clear, bool cpuCopy, float srcLeft = 0.f, float srcTop = 0.f, float srcRight = 1.f,
             float srcBottom = 1.f);
 

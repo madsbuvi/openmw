@@ -31,7 +31,11 @@ namespace MWGui
 {
 
     SpellWindow::SpellWindow(DragAndDrop* drag)
+#ifdef USE_OPENXR
+        : WindowPinnableBase("openmw_spell_window_vr.layout")
+#else
         : WindowPinnableBase("openmw_spell_window.layout")
+#endif
         , NoDrop(drag, mMainWidget)
         , mSpellView(nullptr)
         , mUpdateTimer(0.0f)

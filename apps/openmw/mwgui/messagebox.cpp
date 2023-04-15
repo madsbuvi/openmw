@@ -103,6 +103,8 @@ namespace MWGui
             messageBox->update(height);
             height += messageBox->getHeight();
         }
+
+        box->setVisible(true);
     }
 
     void MessageBoxManager::removeStaticMessageBox()
@@ -180,6 +182,11 @@ namespace MWGui
         mMessageWidget->setCaptionWithReplacing(mMessage);
     }
 
+    MessageBox::~MessageBox()
+    {
+        setVisible(false);
+    }
+
     void MessageBox::update(int height)
     {
         MyGUI::IntSize gameWindowSize = MyGUI::RenderManager::getInstance().getViewSize();
@@ -193,11 +200,6 @@ namespace MWGui
     int MessageBox::getHeight()
     {
         return mMainWidget->getHeight() + mNextBoxPadding;
-    }
-
-    void MessageBox::setVisible(bool value)
-    {
-        mMainWidget->setVisible(value);
     }
 
     InteractiveMessageBox::InteractiveMessageBox(

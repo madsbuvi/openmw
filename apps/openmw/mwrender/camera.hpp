@@ -9,6 +9,8 @@
 #include <osg/Vec3d>
 #include <osg/ref_ptr>
 
+#include <components/stereo/types.hpp>
+
 #include "../mwworld/ptr.hpp"
 
 namespace osg
@@ -16,11 +18,13 @@ namespace osg
     class Camera;
     class Callback;
     class Node;
+    class Quat;
 }
 
 namespace MWRender
 {
     class NpcAnimation;
+    class CameraTrackingUpdateCallback;
 
     /// \brief Camera control
     class Camera
@@ -32,11 +36,12 @@ namespace MWRender
             FirstPerson = 1,
             ThirdPerson = 2,
             Vanity = 3,
-            Preview = 4
+            Preview = 4,
+            VR = 5
         };
 
         Camera(osg::Camera* camera);
-        ~Camera();
+        virtual ~Camera();
 
         /// Attach camera to object
         void attachTo(const MWWorld::Ptr& ptr) { mTrackingPtr = ptr; }
@@ -46,14 +51,17 @@ namespace MWRender
         float getFocalPointTransitionSpeed() const { return mFocalPointTransitionSpeedCoef; }
         void setFocalPointTargetOffset(const osg::Vec2d& v);
         osg::Vec2d getFocalPointTargetOffset() const { return mFocalPointTargetOffset; }
-        void instantTransition();
+        virtual void instantTransition();
         void showCrosshair(bool v) { mShowCrosshair = v; }
 
         /// Update the view matrix of \a cam
-        void updateCamera(osg::Camera* cam);
+        virtual void updateCamera(osg::Camera* cam);
+
+        /// Update the view matrix of the current camera
+        virtual void updateCamera();
 
         /// Reset to defaults
-        void reset() { setMode(Mode::FirstPerson); }
+        virtual void reset() { setMode(Mode::FirstPerson); }
 
         void rotateCameraToTrackingPtr();
 
@@ -73,7 +81,7 @@ namespace MWRender
         void setExtraRoll(float angle) { mExtraRoll = angle; }
 
         /// @param Force view mode switch, even if currently not allowed by the animation.
-        void toggleViewMode(bool force = false);
+        virtual void toggleViewMode(bool force = false);
         bool toggleVanityMode(bool enable);
 
         void applyDeferredPreviewRotationToPlayer(float dt);
@@ -82,7 +90,7 @@ namespace MWRender
         /// \brief Lowers the camera for sneak.
         void setSneakOffset(float offset);
 
-        void processViewChange();
+        virtual void processViewChange();
 
         void update(float duration, bool paused = false);
 
@@ -110,10 +118,18 @@ namespace MWRender
 
         const osg::Matrixf& getViewMatrix() const { return mViewMatrix; }
 
-    private:
+        void setPose(const Stereo::Pose& pose);
+
+    protected:
+        virtual void getOrientation(osg::Quat& orientation) const;
+
+        virtual void getPosition(osg::Vec3d& position) const;
+
+    protected:
         MWWorld::Ptr mTrackingPtr;
         osg::ref_ptr<const osg::Node> mTrackingNode;
         osg::Vec3d mTrackedPosition;
+        Stereo::Pose mTrackedPose;
         float mHeightScale;
         int mCollisionType;
 
@@ -156,17 +172,22 @@ namespace MWRender
 
         bool mShowCrosshair;
 
-        osg::Vec3d calculateTrackedPosition() const;
+        void updateTrackedPosition() const;
         osg::Vec3d calculateFirstPersonPosition(const osg::Vec3d& trackedPosition) const;
         osg::Vec3d getFocalPointOffset() const;
         void updateFocalPointOffset(float duration);
         void updatePosition();
+        mutable osg::Matrix mTrackedWorldMatrix;
 
         osg::ref_ptr<osg::Callback> mUpdateCallback;
 
         // Used to rotate player to the direction of view after exiting preview or vanity mode.
         osg::Vec3f mDeferredRotation;
         bool mDeferredRotationDisabled;
+
+#ifdef USE_OPENXR
+        std::unique_ptr<CameraTrackingUpdateCallback> mCameraTrackingUpdateCallback;
+#endif
     };
 }
 

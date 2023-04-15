@@ -249,7 +249,7 @@ add_component_dir (esm4
 )
 
 add_component_dir (misc
-    constants utf8stream resourcehelpers rng messageformatparser weakcache thread
+    constants utf8stream resourcehelpers rng messageformatparser weakcache callbackmanager thread
     compression osguservalues color tuplemeta tuplehelpers
     )
 
@@ -300,7 +300,7 @@ add_component_dir (myguiplatform
     )
 
 add_component_dir (widgets
-    box fontwrapper imagebutton tags list numericeditbox sharedstatebutton windowcaption widgets
+    box fontwrapper imagebutton tags list numericeditbox sharedstatebutton virtualkeyboardmanager windowcaption widgets
     )
 
 add_component_dir (fontloader
@@ -439,6 +439,41 @@ else ()
     add_component_dir(platform
         file.stdio
         )
+endif()
+
+if(BUILD_OPENMW_VR)
+    add_component_dir(vr
+        actionmanager
+        actionset
+        constants
+        directx
+        frame
+        layer
+        rendertoswapchain
+        session
+        space
+        swapchain
+        trackinglistener
+        trackingmanager
+        trackingpath
+        trackingsource
+        trackingtransform
+        viewer
+        vr
+    )
+    add_component_dir(xr
+        action
+        actionset
+        debug
+        extensions
+        input
+        instance
+        platform
+        session
+        swapchain
+        tracking
+        typeconversion
+    )
 endif()
 
 set (ESM_UI ${CMAKE_SOURCE_DIR}/files/ui/contentselector.ui
@@ -638,4 +673,15 @@ if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.16 AND MSVC)
 
         <boost/program_options/options_description.hpp>
     )
+endif()
+  
+if(BUILD_OPENMW_VR)
+    target_link_libraries(components openxr_loader)
+
+    # Preprocessor variables used to control code paths to vr code
+    if (WIN32)
+        target_compile_options(components PUBLIC -DXR_USE_GRAPHICS_API_OPENGL -DXR_USE_GRAPHICS_API_D3D11 -DXR_USE_PLATFORM_WIN32)
+    elseif(UNIX)
+        target_compile_options(components PUBLIC -DXR_USE_GRAPHICS_API_OPENGL -DXR_USE_PLATFORM_XLIB)
+    endif()
 endif()

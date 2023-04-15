@@ -156,15 +156,20 @@ namespace SceneUtil
         }
         else
         {
+            bool foundRequestedFormat = false;
             for (auto requestedFormat : requestedFormats)
             {
                 if (std::find(mSupportedFormats.cbegin(), mSupportedFormats.cend(), requestedFormat)
                     != mSupportedFormats.cend())
                 {
                     SceneUtil::AutoDepth::setDepthFormat(requestedFormat);
+                    foundRequestedFormat = true;
                     break;
                 }
             }
+
+            if (!foundRequestedFormat)
+                SceneUtil::AutoDepth::setDepthFormat(mSupportedFormats[0]);
         }
     }
 

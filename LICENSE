@@ -672,3 +672,12 @@ may consider it more useful to permit linking proprietary applications with
 the library.  If this is what you want to do, use the GNU Lesser General
 Public License instead of this License.  But first, please read
 <https://www.gnu.org/philosophy/why-not-lgpl.html>.
+
+-----------------------------------------------------------------------------
+-----------------------------------------------------------------------------
+On Windows releases, this project bundles the openxr loader binary, which is 
+licensed under the apache 2.0 license. For license details, see: 
+https://github.com/KhronosGroup/OpenXR-SDK/blob/master/LICENSE
+
+Bundled as:
+ - openxr_loader.dll

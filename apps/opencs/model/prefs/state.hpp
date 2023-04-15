@@ -82,6 +82,9 @@ namespace CSMPrefs
 
         void setDefault(const std::string& key, const std::string& default_);
 
+        //! Adds a setting without exposing it in the user interface
+        void setDefaultHidden(const std::string& key, const std::string& category, const std::string& default_);
+
     public:
         State(const Files::ConfigurationManager& configurationManager);
 

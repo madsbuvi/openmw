@@ -28,6 +28,15 @@ namespace MWGui
         MyGUI::TabControl* mSettingsTab;
         MyGUI::Button* mOkButton;
 
+        // VR
+        MyGUI::ComboBox* mVRHudPosition;
+        MyGUI::ComboBox* mVRTooltipPosition;
+        MyGUI::ComboBox* mVRMirrorTextureEye;
+        MyGUI::ComboBox* mVRSnapAngle;
+        MyGUI::ComboBox* mVRThumbstickUp;
+        MyGUI::ComboBox* mVRThumbstickDown;
+        MyGUI::Button* mVRHeightCalibButton;
+
         // graphics
         MyGUI::ListBox* mResolutionList;
         MyGUI::ComboBox* mWindowModeList;
@@ -73,6 +82,14 @@ namespace MWGui
         void onResolutionCancel();
         void highlightCurrentResolution();
 
+        void onVRMirrorTextureEyeChanged(MyGUI::ComboBox* _sender, size_t pos);
+        void onVRHudPositionChanged(MyGUI::ComboBox* _sender, size_t pos);
+        void onVRTooltipPositionChanged(MyGUI::ComboBox* _sender, size_t pos);
+        void onVRSnapAngleChanged(MyGUI::ComboBox* _sender, size_t pos);
+        void onVRThumbstickUpChanged(MyGUI::ComboBox* _sender, size_t pos);
+        void onVRThumbstickDownChanged(MyGUI::ComboBox* _sender, size_t pos);
+        void onVRHeightCalibButtonClicked(MyGUI::Widget* _sender);
+
         void onWaterTextureSizeChanged(MyGUI::ComboBox* _sender, size_t pos);
         void onWaterReflectionDetailChanged(MyGUI::ComboBox* _sender, size_t pos);
         void onWaterRainRippleDetailChanged(MyGUI::ComboBox* _sender, size_t pos);
@@ -95,7 +112,7 @@ namespace MWGui
         void onKeyboardSwitchClicked(MyGUI::Widget* _sender);
         void onControllerSwitchClicked(MyGUI::Widget* _sender);
 
-        void onWindowResize(MyGUI::Window* _sender);
+        void onWindowResize(MyGUI::Window* _sender) override;
 
         void onScriptFilterChange(MyGUI::EditBox*);
         void onScriptListSelection(MyGUI::ListBox*, size_t index);

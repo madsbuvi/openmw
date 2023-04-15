@@ -11,6 +11,8 @@
 
 #include "../mwbase/world.hpp"
 
+#include "../mwrender/renderingmanager.hpp"
+
 #include "contentloader.hpp"
 #include "esmstore.hpp"
 #include "globals.hpp"
@@ -78,6 +80,7 @@ namespace MWWorld
     class WeatherManager;
     class Player;
     class ProjectileManager;
+    class WeaponPoseTrackingListener;
 
     /// \brief The game world and its visual representation
 
@@ -141,6 +144,10 @@ namespace MWWorld
 
         float mSimulationTimeScale = 1.0;
 
+#ifdef USE_OPENXR
+        std::unique_ptr<WeaponPoseTrackingListener> mWeaponPoseTrackingListener;
+#endif
+
         // not implemented
         World(const World&);
         World& operator=(const World&);
@@ -184,7 +191,7 @@ namespace MWWorld
             Loading::Listener* listener);
 
         float feetToGameUnits(float feet);
-        float getActivationDistancePlusTelekinesis();
+        float getActivationDistancePlusTelekinesis() override;
 
         MWWorld::ConstPtr getClosestMarker(const MWWorld::ConstPtr& ptr, const ESM::RefId& id);
         MWWorld::ConstPtr getClosestMarkerFromExteriorPosition(const osg::Vec3f& worldPos, const ESM::RefId& id);
@@ -197,11 +204,38 @@ namespace MWWorld
         void addContainerScripts(const Ptr& reference, CellStore* cell) override;
         void removeContainerScripts(const Ptr& reference) override;
 
+        //World(osgViewer::Viewer* viewer, osg::ref_ptr<osg::Group> rootNode, std::unique_ptr<MWRender::Camera> camera,
+        //    Resource::ResourceSystem* resourceSystem, SceneUtil::WorkQueue* workQueue,
+        //    SceneUtil::UnrefQueue& unrefQueue, const Files::Collections& fileCollections,
+        //    const std::vector<std::string>& contentFiles, const std::vector<std::string>& groundcoverFiles,
+        //    int activationDistanceOverride, const std::string& startCell, const std::filesystem::path& userDataPath);
+        //    ToUTF8::Utf8Encoder* encoder, int activationDistanceOverride, const std::string& startCell,
+        //    const std::string& startupScript, const std::string& resourcePath, const std::string& userDataPath); // MERGETODO
+        //    
+        //    // MASTER SIGNATURE:
+        //World(osgViewer::Viewer* viewer, osg::ref_ptr<osg::Group> rootNode, Resource::ResourceSystem* resourceSystem,
+        //    SceneUtil::WorkQueue* workQueue, SceneUtil::UnrefQueue& unrefQueue,
+        //    const Files::Collections& fileCollections, const std::vector<std::string>& contentFiles,
+        //    const std::vector<std::string>& groundcoverFiles, ToUTF8::Utf8Encoder* encoder,
+        //    int activationDistanceOverride, const std::string& startCell, const std::filesystem::path& userDataPath);
+        //    
+        //    // VR SIGNATURE:
+        //World(osgViewer::Viewer* viewer, osg::ref_ptr<osg::Group> rootNode,
+        //    Resource::ResourceSystem* resourceSystem, SceneUtil::WorkQueue* workQueue,
+        //    SceneUtil::UnrefQueue& unrefQueue, const Files::Collections& fileCollections,
+        //    const std::vector<std::string>& contentFiles, const std::vector<std::string>& groundcoverFiles,
+        //    ToUTF8::Utf8Encoder* encoder, int activationDistanceOverride, const std::string& startCell,
+        //    const std::string& startupScript, const std::string& resourcePath, const std::string& userDataPath);
+
+        
         World(osgViewer::Viewer* viewer, osg::ref_ptr<osg::Group> rootNode, Resource::ResourceSystem* resourceSystem,
             SceneUtil::WorkQueue* workQueue, SceneUtil::UnrefQueue& unrefQueue,
             const Files::Collections& fileCollections, const std::vector<std::string>& contentFiles,
             const std::vector<std::string>& groundcoverFiles, ToUTF8::Utf8Encoder* encoder,
-            int activationDistanceOverride, const std::string& startCell, const std::filesystem::path& userDataPath);
+            int activationDistanceOverride, const std::string& startCell, const std::filesystem::path& userDataPath,
+            std::unique_ptr<MWRender::Camera> camera);
+            
+            
 
         virtual ~World();
 
@@ -236,7 +270,9 @@ namespace MWWorld
         MWWorld::Ptr getPlayerPtr() override;
         MWWorld::ConstPtr getPlayerConstPtr() const override;
 
+        MWRender::RenderingManager* getRenderingManager() override;
         MWWorld::ESMStore& getStore() override { return mStore; }
+
 
         const std::vector<int>& getESMVersions() const override;
 
@@ -678,13 +714,31 @@ namespace MWWorld
         bool isAreaOccupiedByOtherActor(const osg::Vec3f& position, const float radius,
             std::span<const MWWorld::ConstPtr> ignore, std::vector<MWWorld::Ptr>* occupyingActors) const override;
 
+        /// Intersects the scene from the origin, in the specified orientation and distance, storing the %result in the
+        /// result structure.
+        /// @Return distance to the target object, or -1 if no object was targeted / in range
+        float getTargetObject(MWRender::RayResult& result, const osg::Vec3f& origin, const osg::Quat& orientation,
+            float maxDistance, bool ignorePlayer) override;
+
+        MWWorld::Ptr placeObject(const MWWorld::ConstPtr& object, const MWRender::RayResult& ray, int amount) override;
+        ///< copy and place an object into the gameworld based on the given intersection
+        /// @param object
+        /// @param world position to place object
+        /// @param number of objects to place
+
+        /// @Return ESM::Weapon::Type enum describing the type of weapon currently drawn by the player.
+        int getActiveWeaponType(void) override;
+
         void reportStats(unsigned int frameNumber, osg::Stats& stats) const override;
 
         std::vector<MWWorld::Ptr> getAll(const ESM::RefId& id) override;
 
         Misc::Rng::Generator& getPrng() override;
 
-        MWRender::RenderingManager* getRenderingManager() override { return mRendering.get(); }
+        void enableVRPointer(bool left, bool right) override;
+
+        void getWeaponPose(Stereo::Pose& pose) override;
+        void setWeaponPosePath(int64_t path) override;
 
         MWRender::PostProcessor* getPostProcessor() override;
 
