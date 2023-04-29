@@ -415,19 +415,18 @@ namespace MWGui
         {
             std::string mirrorTextureEye = Settings::Manager::getString("mirror texture eye", "VR");
             for (unsigned i = 0; i < mVRMirrorTextureEye->getItemCount(); i++)
-                if (Misc::StringUtils::ciEqual<std::string, std::string>(
-                        mirrorTextureEye, mVRMirrorTextureEye->getItemNameAt(i)))
+                if (Misc::StringUtils::ciEqual(
+                        mirrorTextureEye, mVRMirrorTextureEye->getItemNameAt(i).asUTF8()))
                     mVRMirrorTextureEye->setIndexSelected(i);
 
             std::string hudPosition = Settings::Manager::getString("hud position", "VR");
             for (unsigned i = 0; i < mVRHudPosition->getItemCount(); i++)
-                if (Misc::StringUtils::ciEqual<std::string, std::string>(hudPosition, mVRHudPosition->getItemNameAt(i)))
+                if (Misc::StringUtils::ciEqual(hudPosition, mVRHudPosition->getItemNameAt(i).asUTF8()))
                     mVRHudPosition->setIndexSelected(i);
 
             std::string tooltipPosition = Settings::Manager::getString("tooltip position", "VR");
             for (unsigned i = 0; i < mVRTooltipPosition->getItemCount(); i++)
-                if (Misc::StringUtils::ciEqual<std::string, std::string>(
-                        tooltipPosition, mVRTooltipPosition->getItemNameAt(i)))
+                if (Misc::StringUtils::ciEqual(tooltipPosition, mVRTooltipPosition->getItemNameAt(i).asUTF8()))
                     mVRTooltipPosition->setIndexSelected(i);
 
             double snapAngle = Settings::Manager::getDouble("snap angle", "VR");
@@ -442,14 +441,12 @@ namespace MWGui
 
             std::string axisUpPosition = Settings::Manager::getString("utility axis up action", "VR");
             for (unsigned i = 0; i < mVRThumbstickUp->getItemCount(); i++)
-                if (Misc::StringUtils::ciEqual<std::string, std::string>(
-                        axisUpPosition, mVRThumbstickUp->getItemNameAt(i)))
+                if (Misc::StringUtils::ciEqual(axisUpPosition, mVRThumbstickUp->getItemNameAt(i).asUTF8()))
                     mVRThumbstickUp->setIndexSelected(i);
 
             std::string axisDownPosition = Settings::Manager::getString("utility axis down action", "VR");
             for (unsigned i = 0; i < mVRThumbstickDown->getItemCount(); i++)
-                if (Misc::StringUtils::ciEqual<std::string, std::string>(
-                        axisDownPosition, mVRThumbstickDown->getItemNameAt(i)))
+                if (Misc::StringUtils::ciEqual(axisDownPosition, mVRThumbstickDown->getItemNameAt(i).asUTF8()))
                     mVRThumbstickDown->setIndexSelected(i);
         }
 

@@ -82,7 +82,6 @@ namespace MWVR
 
             void update_swingState();
             void transition_swingingToImpact(MWWorld::Ptr victim, osg::Vec3f hitPosition, bool success);
-            void transition_swingingToImpact();
 
             void update_impactState();
             void transition_impactToCooldown();

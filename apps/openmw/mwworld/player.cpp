@@ -166,10 +166,6 @@ namespace MWWorld
         ptr.getClass().getNpcStats(ptr).setDrawState(state);
     }
 
-#ifdef USE_OPENXR
-        if (VR::getVR())
-            VR::Session::instance().setSneak(sneak);
-#endif
     void Player::yaw(float yaw)
     {
         MWWorld::Ptr ptr = getPlayer();

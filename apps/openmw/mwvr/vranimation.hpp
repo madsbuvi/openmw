@@ -60,7 +60,7 @@ namespace MWVR
         void setEnableCrosshairs(bool enable);
 
     protected:
-        float getVelocity(const std::string& groupname) const override;
+        float getVelocity(const std::string_view groupname) const override;
 
         void onTrackingUpdated(VR::TrackingManager& manager, VR::DisplayTime predictedDisplayTime) override;
 

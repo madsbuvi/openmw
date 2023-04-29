@@ -356,6 +356,8 @@ bool OMW::Engine::frame(float frametime)
         mLuaManager->reportStats(frameNumber, *stats);
     }
 
+    if (VR::getVR())
+        VR::Viewer::instance().newFrame();
     mViewer->eventTraversal();
     mViewer->updateTraversal();
 
@@ -811,19 +813,19 @@ void OMW::Engine::prepareEngine()
     const std::string xrinputglobaldefault = mCfgMgr.getGlobalPath().string() + "/xrcontrollersuggestions.xml";
 
     std::string xrControllerSuggestions;
-    if (boost::filesystem::exists(xrinputuserdefault))
+    if (std::filesystem::exists(xrinputuserdefault))
         xrControllerSuggestions = xrinputuserdefault;
-    else if (boost::filesystem::exists(xrinputlocaldefault))
+    else if (std::filesystem::exists(xrinputlocaldefault))
         xrControllerSuggestions = xrinputlocaldefault;
-    else if (boost::filesystem::exists(xrinputglobaldefault))
+    else if (std::filesystem::exists(xrinputglobaldefault))
         xrControllerSuggestions = xrinputglobaldefault;
     else
         xrControllerSuggestions = ""; // if it doesn't exist, pass in an empty string
 
     std::string defaultXrControllerSuggestions;
-    if (boost::filesystem::exists(xrinputlocaldefault))
+    if (std::filesystem::exists(xrinputlocaldefault))
         defaultXrControllerSuggestions = xrinputlocaldefault;
-    else if (boost::filesystem::exists(xrinputglobaldefault))
+    else if (std::filesystem::exists(xrinputglobaldefault))
         defaultXrControllerSuggestions = xrinputglobaldefault;
     else
         defaultXrControllerSuggestions = ""; // if it doesn't exist, pass in an empty string
@@ -865,11 +867,19 @@ void OMW::Engine::prepareEngine()
             mWindowManager->playVideo(logo, true);
     }
 
+    // 
+        
+        //World(osgViewer::Viewer * viewer, osg::ref_ptr<osg::Group> rootNode, Resource::ResourceSystem * resourceSystem,
+        //SceneUtil::WorkQueue * workQueue, SceneUtil::UnrefQueue & unrefQueue, const Files::Collections& fileCollections,
+        //const std::vector<std::string>& contentFiles, const std::vector<std::string>& groundcoverFiles,
+        //ToUTF8::Utf8Encoder* encoder, int activationDistanceOverride, const std::string& startCell,
+        //const std::filesystem::path& userDataPath, std::unique_ptr<MWRender::Camera> camera);
+
     // Create the world
     [[maybe_unused]] auto* cameraTemp = camera.get();
     mWorld = std::make_unique<MWWorld::World>(mViewer, rootNode, mResourceSystem.get(), mWorkQueue.get(), *mUnrefQueue,
         mFileCollections, mContentFiles, mGroundcoverFiles, mEncoder.get(), mActivationDistanceOverride, mCellName,
-        mStartupScript, mResDir.string(), mCfgMgr.getUserDataPath().string(), std::move(camera));
+        mCfgMgr.getUserDataPath(), std::move(camera));
     mWorld->setupPlayer();
     mWorld->setRandomSeed(mRandomSeed);
     mEnvironment.setWorld(*mWorld);
@@ -1067,8 +1077,6 @@ void OMW::Engine::go()
         }
         else
         {
-            if (VR::getVR())
-                VR::Viewer::instance().newFrame();
             bool guiActive = mWindowManager->isGuiMode();
             if (!guiActive)
                 simulationTime += dt;

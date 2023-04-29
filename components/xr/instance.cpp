@@ -6,7 +6,7 @@
 #include "typeconversion.hpp"
 
 #include <components/debug/debuglog.hpp>
-#include <components/misc/stringops.hpp>
+#include <components/misc/strings/lower.hpp>
 #include <components/sdlutil/sdlgraphicswindow.hpp>
 #include <components/vr/directx.hpp>
 #include <components/vr/layer.hpp>

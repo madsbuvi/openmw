@@ -527,6 +527,7 @@ namespace Stereo
             if (!Stereo::getMultiview())
             {
                 auto eye = static_cast<int>(Stereo::Manager::instance().getEye(cv));
+                assert(eye < 2 && eye >= 0);
 
                 if (msaa)
                 {

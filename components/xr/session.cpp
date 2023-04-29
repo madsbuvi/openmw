@@ -503,10 +503,7 @@ namespace XR
 
     void Session::initCompositionLayerDepth()
     {
-        setAppShouldShareDepthBuffer(KHR_composition_layer_depth.enabled()
-            // WORKAROUND: SteamVR keeps reporting unsupported formats as supported, so for now just block depth layers
-            // with the steamvr runtime.
-            && !VR::getSteamVR());
+        setAppShouldShareDepthBuffer(KHR_composition_layer_depth.enabled());
     }
 
     PFN_xrEnumerateReprojectionModesMSFT enumerateReprojectionModesMSFT = nullptr;

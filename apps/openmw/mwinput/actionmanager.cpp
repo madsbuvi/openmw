@@ -44,25 +44,6 @@ namespace MWInput
 
     void ActionManager::update(float dt)
     {
-    // MERGETODO: figure out where this snipped should fit in now.
-    // it used to be within
-    //             if (!isToggleSneak)
-    //             {
-    //               if (!MWBase::Environment::get().getInputManager()->joystickLastUsed())
-    //               {
-                {
-                    if (isSneaking())
-                    {
-                        if (mBindingsManager->actionIsActive(A_Sneak))
-                        {
-                            toggleSneaking();
-                            player.setSneak(mBindingsManager->actionIsActive(A_Sneak));
-                        }
-                    }
-                    else
-                        player.setSneak(mBindingsManager->actionIsActive(A_Sneak));
-                }
-            }
         if (mBindingsManager->actionIsActive(A_MoveForward) || mBindingsManager->actionIsActive(A_MoveBackward)
             || mBindingsManager->actionIsActive(A_MoveLeft) || mBindingsManager->actionIsActive(A_MoveRight)
             || mBindingsManager->actionIsActive(A_Jump) || mBindingsManager->actionIsActive(A_Sneak)

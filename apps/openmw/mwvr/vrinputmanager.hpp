@@ -33,10 +33,12 @@ namespace MWVR
     public:
         VRInputManager(SDL_Window* window, osg::ref_ptr<osgViewer::Viewer> viewer,
             osg::ref_ptr<osgViewer::ScreenCaptureHandler> screenCaptureHandler,
-            osgViewer::ScreenCaptureHandler::CaptureOperation* screenCaptureOperation, const std::string& userFile,
-            bool userFileExists, const std::string& userControllerBindingsFile,
-            const std::string& controllerBindingsFile, bool grab, const std::string& xrControllerSuggestionsFile,
-            const std::string& defaultXrControllerSuggestionsFile);
+            osgViewer::ScreenCaptureHandler::CaptureOperation* screenCaptureOperation,
+            const std::filesystem::path& userFile, bool userFileExists,
+            const std::filesystem::path& userControllerBindingsFile,
+            const std::filesystem::path& controllerBindingsFile, bool grab,
+            const std::filesystem::path& xrControllerSuggestionsFile,
+            const std::filesystem::path& defaultXrControllerSuggestionsFile);
 
         virtual ~VRInputManager();
 
@@ -105,13 +107,13 @@ namespace MWVR
         bool mPointerRight = false;
         bool mHapticsEnabled = true;
         bool mSmoothTurning = true;
-        bool mIsToggleSneak = false;
         float mSnapAngle = 30.f;
         float mSmoothTurnRate = 1.0f;
         Stereo::Unit mPhysicalSneakHeightOffset;
         bool mPhysicalSneakEnabled = true;
         bool mUtilityDownActive = false;
         bool mUtilityUpActive = false;
+        bool mIsPhysicalSneak = false;
 
         osg::ref_ptr<osg::Node> mVRAimNode;
 

@@ -343,23 +343,18 @@ namespace MWVR
 
             // When velocity falls below minimum, transition to register the miss
             if (!canSwing())
-                return transition_swingingToImpact();
+                return transition_swingingToImpact(MWWorld::Ptr(), osg::Vec3f(), false);
 
             MWWorld::Ptr victim;
             osg::Vec3f hitPosition;
             bool success = mPtr.getClass().evaluateHit(mPtr, victim, hitPosition);
             if (!victim.isEmpty())
-                transition_swingingToImpact();
+                transition_swingingToImpact(victim, hitPosition, success);
         }
 
         void StateMachine::transition_swingingToImpact(MWWorld::Ptr victim, osg::Vec3f hitPosition, bool success) 
         {
-
-        }
-
-        void StateMachine::transition_swingingToImpact()
-        {
-            mPtr.getClass().hit(mPtr, mStrength, mSwingType, false);
+            mPtr.getClass().hit(mPtr, mStrength, mSwingType, victim, hitPosition, success);
             transition(SwingState_Impact);
         }
 

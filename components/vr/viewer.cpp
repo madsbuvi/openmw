@@ -10,7 +10,8 @@
 
 #include <components/misc/callbackmanager.hpp>
 #include <components/misc/constants.hpp>
-#include <components/misc/stringops.hpp>
+#include <components/misc/strings/lower.hpp>
+#include <components/misc/strings/algorithm.hpp>
 
 #include <components/stereo/multiview.hpp>
 #include <components/stereo/stereomanager.hpp>
@@ -30,9 +31,21 @@
 
 namespace VR
 {
+    static bool isNumber(const std::string& in)
+    {
+        for (auto c : in)
+        {
+            if (!std::isdigit(c))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
     int parseResolution(std::string conf, int recommended, int max)
     {
-        if (Misc::StringUtils::isNumber(conf))
+        if (isNumber(conf))
         {
             int res = std::atoi(conf.c_str());
             if (res <= 0)

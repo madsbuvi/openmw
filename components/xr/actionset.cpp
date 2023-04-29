@@ -4,7 +4,7 @@
 #include <openxr/openxr.h>
 
 #include <components/debug/debuglog.hpp>
-#include <components/misc/stringops.hpp>
+#include <components/misc/strings/lower.hpp>
 #include <components/xr/debug.hpp>
 #include <components/xr/instance.hpp>
 

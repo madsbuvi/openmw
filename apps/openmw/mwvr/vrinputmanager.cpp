@@ -294,26 +294,8 @@ namespace MWVR
         const auto playerHeight = VR::Session::instance().playerHeight();
         if (mPhysicalSneakEnabled && VR::getStandingPlay() && playerHeight.asMeters() > 0.0f)
         {
-            if (headsetHeight < playerHeight - mPhysicalSneakHeightOffset) // No scale getting raw OpenXR pose
-            {
-                if (!mActionManager->isSneaking())
-                {
-                    mActionManager->toggleSneaking();
-                    Log(Debug::Verbose) << "Starting Physical Sneak - Headset Height: " << headsetHeight.asMeters()
-                                        << " playerHeight-offset: "
-                                        << (playerHeight - mPhysicalSneakHeightOffset).asMeters();
-                }
-            }
-            else
-            {
-                if (mActionManager->isSneaking())
-                {
-                    mActionManager->toggleSneaking();
-                    Log(Debug::Verbose) << "Stopping Physical Sneak - Headset Height: " << headsetHeight.asMeters()
-                                        << " playerHeight-offset: "
-                                        << (playerHeight - mPhysicalSneakHeightOffset).asMeters();
-                }
-            }
+            // MERGETODO: Expose to Lua
+            mIsPhysicalSneak = headsetHeight < playerHeight - mPhysicalSneakHeightOffset;
         }
     }
 
@@ -369,10 +351,11 @@ namespace MWVR
 
     VRInputManager::VRInputManager(SDL_Window* window, osg::ref_ptr<osgViewer::Viewer> viewer,
         osg::ref_ptr<osgViewer::ScreenCaptureHandler> screenCaptureHandler,
-        osgViewer::ScreenCaptureHandler::CaptureOperation* screenCaptureOperation, const std::string& userFile,
-        bool userFileExists, const std::string& userControllerBindingsFile, const std::string& controllerBindingsFile,
-        bool grab, const std::string& xrControllerSuggestionsFile,
-        const std::string& defaultXrControllerSuggestionsFile)
+        osgViewer::ScreenCaptureHandler::CaptureOperation* screenCaptureOperation,
+        const std::filesystem::path& userFile, bool userFileExists,
+        const std::filesystem::path& userControllerBindingsFile, const std::filesystem::path& controllerBindingsFile,
+        bool grab, const std::filesystem::path& xrControllerSuggestionsFile,
+        const std::filesystem::path& defaultXrControllerSuggestionsFile)
         : MWInput::InputManager(window, viewer, screenCaptureHandler, screenCaptureOperation, userFile, userFileExists,
             userControllerBindingsFile, controllerBindingsFile, grab)
         , mOSGViewer(viewer)
@@ -380,7 +363,6 @@ namespace MWVR
         , mXRInput(new OpenXRInput(xrControllerSuggestionsFile, defaultXrControllerSuggestionsFile))
         , mHapticsEnabled{ Settings::Manager::getBool("haptics enabled", "VR") }
         , mSmoothTurning{ Settings::Manager::getBool("smooth turning", "VR") }
-        , mIsToggleSneak(Settings::Manager::getBool("toggle sneak", "Input"))
         , mSnapAngle{ Settings::Manager::getFloat("snap angle", "VR") }
         , mSmoothTurnRate{ Settings::Manager::getFloat("smooth turn rate", "VR") }
         , mPhysicalSneakHeightOffset(
@@ -625,8 +607,7 @@ namespace MWVR
                     break;
                 case MWInput::A_Sneak:
                 {
-                    if (!mIsToggleSneak)
-                        mBindingsManager->ics().getChannel(MWInput::A_Sneak)->setValue(action->isActive() ? 1.f : 0.f);
+                    mBindingsManager->ics().getChannel(MWInput::A_Sneak)->setValue(action->isActive() ? 1.f : 0.f);
                     break;
                 }
                 case MWInput::A_Use:
@@ -713,9 +694,6 @@ namespace MWVR
     {
         switch (actionId)
         {
-            case MWInput::A_GameMenu:
-                mActionManager->toggleMainMenu();
-                break;
             case MWInput::A_ToggleThumbstickAutoRun:
                 mControllerManager->setThumbstickAutoRun(!mControllerManager->thumbstickAutoRun());
                 break;
@@ -725,101 +703,27 @@ namespace MWVR
             case A_RadialMenu:
                 MWBase::Environment::get().getWindowManager()->pushGuiMode(MWGui::GM_RadialMenu);
                 break;
-            case MWInput::A_Screenshot:
-                mActionManager->screenshot();
-                break;
-            case MWInput::A_Inventory:
-                mActionManager->toggleInventory();
-                break;
-            case MWInput::A_Console:
-                mActionManager->toggleConsole();
-                break;
-            case MWInput::A_Journal:
-                mActionManager->toggleJournal();
-                break;
-            case MWInput::A_AutoMove:
-                mActionManager->toggleAutoMove();
-                break;
-            case MWInput::A_AlwaysRun:
-                mActionManager->toggleWalking();
-                break;
-            case MWInput::A_ToggleWeapon:
-                mActionManager->toggleWeapon();
-                break;
-            case MWInput::A_Rest:
-                mActionManager->rest();
-                break;
-            case MWInput::A_ToggleSpell:
-                mActionManager->toggleSpell();
-                break;
-            case MWInput::A_QuickKey1:
-                mActionManager->quickKey(1);
-                break;
-            case MWInput::A_QuickKey2:
-                mActionManager->quickKey(2);
-                break;
-            case MWInput::A_QuickKey3:
-                mActionManager->quickKey(3);
-                break;
-            case MWInput::A_QuickKey4:
-                mActionManager->quickKey(4);
-                break;
-            case MWInput::A_QuickKey5:
-                mActionManager->quickKey(5);
-                break;
-            case MWInput::A_QuickKey6:
-                mActionManager->quickKey(6);
-                break;
-            case MWInput::A_QuickKey7:
-                mActionManager->quickKey(7);
-                break;
-            case MWInput::A_QuickKey8:
-                mActionManager->quickKey(8);
-                break;
-            case MWInput::A_QuickKey9:
-                mActionManager->quickKey(9);
-                break;
-            case MWInput::A_QuickKey10:
-                mActionManager->quickKey(10);
-                break;
-            case MWInput::A_QuickKeysMenu:
-                mActionManager->showQuickKeysMenu();
-                break;
-            case MWInput::A_ToggleHUD:
-                MWBase::Environment::get().getWindowManager()->toggleHud();
-                break;
-            case MWInput::A_ToggleDebug:
-                MWBase::Environment::get().getWindowManager()->toggleDebugWindow();
-                break;
-            case MWInput::A_QuickSave:
-                mActionManager->quickSave();
-                break;
-            case MWInput::A_QuickLoad:
-                mActionManager->quickLoad();
-                break;
-            case MWInput::A_CycleSpellLeft:
-                if (mActionManager->checkAllowedToUseItems()
-                    && MWBase::Environment::get().getWindowManager()->isAllowed(MWGui::GW_Magic))
-                    MWBase::Environment::get().getWindowManager()->cycleSpell(false);
-                break;
-            case MWInput::A_CycleSpellRight:
-                if (mActionManager->checkAllowedToUseItems()
-                    && MWBase::Environment::get().getWindowManager()->isAllowed(MWGui::GW_Magic))
-                    MWBase::Environment::get().getWindowManager()->cycleSpell(true);
-                break;
-            case MWInput::A_CycleWeaponLeft:
-                if (mActionManager->checkAllowedToUseItems()
-                    && MWBase::Environment::get().getWindowManager()->isAllowed(MWGui::GW_Inventory))
-                    MWBase::Environment::get().getWindowManager()->cycleWeapon(false);
-                break;
-            case MWInput::A_CycleWeaponRight:
-                if (mActionManager->checkAllowedToUseItems()
-                    && MWBase::Environment::get().getWindowManager()->isAllowed(MWGui::GW_Inventory))
-                    MWBase::Environment::get().getWindowManager()->cycleWeapon(true);
-                break;
-            case MWInput::A_Jump:
-                mActionManager->setAttemptJump(true);
-                break;
+                // MERGETODO: I probably don't need this since i'm setting the ics channel
+            //case MWInput::A_CycleSpellLeft:
+            //    if (mActionManager->checkAllowedToUseItems()
+            //        && MWBase::Environment::get().getWindowManager()->isAllowed(MWGui::GW_Magic))
+            //        MWBase::Environment::get().getWindowManager()->cycleSpell(false);
+            //    break;
+            //case MWInput::A_CycleSpellRight:
+            //    if (mActionManager->checkAllowedToUseItems()
+            //        && MWBase::Environment::get().getWindowManager()->isAllowed(MWGui::GW_Magic))
+            //        MWBase::Environment::get().getWindowManager()->cycleSpell(true);
+            //    break;
+            //case MWInput::A_CycleWeaponLeft:
+            //    if (mActionManager->checkAllowedToUseItems()
+            //        && MWBase::Environment::get().getWindowManager()->isAllowed(MWGui::GW_Inventory))
+            //        MWBase::Environment::get().getWindowManager()->cycleWeapon(false);
+            //    break;
+            //case MWInput::A_CycleWeaponRight:
+            //    if (mActionManager->checkAllowedToUseItems()
+            //        && MWBase::Environment::get().getWindowManager()->isAllowed(MWGui::GW_Inventory))
+            //        MWBase::Environment::get().getWindowManager()->cycleWeapon(true);
+            //    break;
             case A_Recenter:
                 MWVR::VRGUIManager::instance().updateTracking();
                 if (!MWBase::Environment::get().getWindowManager()->isGuiMode())
@@ -829,10 +733,10 @@ namespace MWVR
                 if (mPointerLeft || mPointerRight || MWBase::Environment::get().getWindowManager()->isGuiMode())
                     pointActivation(true);
                 break;
-            case MWInput::A_ToggleSneak:
-                mActionManager->toggleSneaking();
-                break;
             default:
+                auto channel = mBindingsManager->ics().getChannel(actionId);
+                if (channel)
+                    channel->setValue(1.0);
                 break;
         }
     }
@@ -846,11 +750,12 @@ namespace MWVR
                 if (mPointerLeft || mPointerRight || MWBase::Environment::get().getWindowManager()->isGuiMode())
                     pointActivation(false);
                 break;
-            case MWInput::A_Sneak:
-                if (mIsToggleSneak)
-                    mActionManager->toggleSneaking();
+            case A_Recenter:
                 break;
             default:
+                auto channel = mBindingsManager->ics().getChannel(actionId);
+                if (channel)
+                    channel->setValue(0.0);
                 break;
         }
     }

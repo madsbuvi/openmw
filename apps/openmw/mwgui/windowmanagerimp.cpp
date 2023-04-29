@@ -555,12 +555,14 @@ namespace MWGui
         mCharGen = std::make_unique<CharacterCreation>(mViewer->getSceneData()->asGroup(), mResourceSystem);
 
 #ifdef USE_OPENXR
-        mVrMetaMenu = new MWVR::VrMetaMenu(w, h);
-        mWindows.push_back(mVrMetaMenu);
+        auto vrMetaMenu = std::make_unique<MWVR::VrMetaMenu>(w, h);
+        mVrMetaMenu = vrMetaMenu.get();
+        mWindows.emplace_back(std::move(vrMetaMenu));
         mGuiModeStates[GM_VrMetaMenu] = GuiModeState(mVrMetaMenu);
 
-        mRadialMenu = new MWVR::RadialMenu(w, h, mQuickKeysMenu);
-        mWindows.push_back(mRadialMenu);
+        auto radialMenu = std::make_unique<MWVR::RadialMenu>(w, h, mQuickKeysMenu);
+        mRadialMenu = radialMenu.get();
+        mWindows.emplace_back(std::move(radialMenu));
         mGuiModeStates[GM_RadialMenu] = GuiModeState(mRadialMenu);
 #endif
 

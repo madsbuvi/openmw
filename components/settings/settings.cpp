@@ -155,9 +155,9 @@ namespace Settings
 
         if (VR::getVR())
         {
-            const std::string overridesFile = (paths.front() / "overrides.bin").string();
-            if (boost::filesystem::exists(overridesFile))
-                loadOverrides(overridesFile);
+            auto overridesFile = paths.front() / "overrides.bin";
+            if (std::filesystem::exists(overridesFile))
+                parser.loadSettingsFile(overridesFile, mSettingsOverrides, true, false);
             else
                 throw std::runtime_error(
                     "No settings overrides file found! Make sure the file \"overrides.bin\" was properly installed.");
@@ -174,13 +174,6 @@ namespace Settings
     }
 
     void Manager::saveUser(const std::filesystem::path& file)
-    {
-        SettingsFileParser parser;
-        parser.loadSettingsFile(file, mSettingsOverrides, true);
-    }
-
-
-    void Manager::loadOverrides(const std::string& file)
     {
         SettingsFileParser parser;
         parser.saveSettingsFile(file, mUserSettings);
@@ -312,11 +305,7 @@ namespace Settings
 
     void Manager::setString(std::string_view setting, std::string_view category, const std::string& value)
     {
-        auto found = mSettingsOverrides.find(std::make_pair(category, setting));
-        if (found != mSettingsOverrides.end())
-            return;
-
-        found = mUserSettings.find(std::make_pair(category, setting));
+        auto found = mUserSettings.find(std::make_pair(category, setting));
         if (found != mUserSettings.end())
         {
             if (found->second == value)
@@ -475,46 +464,5 @@ namespace Settings
     void Manager::recordInit(std::string_view setting, std::string_view category)
     {
         sInitialized.emplace(category, setting);
-    }
-
-    // MERGETODO: Am i using these override methods for anything? Do they differ from the set() methods above?
-    void Manager::overrideString(const std::string& setting, const std::string& category, const std::string& value)
-    {
-        CategorySettingValueMap::key_type key = std::make_pair(category, setting);
-
-        CategorySettingValueMap::iterator found = mUserSettings.find(key);
-        if (found != mUserSettings.end())
-        {
-            if (found->second == value)
-                return;
-        }
-
-        mSettingsOverrides[key] = value;
-    }
-
-    void Manager::overrideInt(const std::string& setting, const std::string& category, const int value)
-    {
-        std::ostringstream stream;
-        stream << value;
-        overrideString(setting, category, stream.str());
-    }
-
-    void Manager::overrideFloat(const std::string& setting, const std::string& category, const float value)
-    {
-        std::ostringstream stream;
-        stream << value;
-        overrideString(setting, category, stream.str());
-    }
-
-    void Manager::overrideBool(const std::string& setting, const std::string& category, const bool value)
-    {
-        overrideString(setting, category, value ? "true" : "false");
-    }
-
-    void Manager::overrideVector2(const std::string& setting, const std::string& category, const osg::Vec2f value)
-    {
-        std::ostringstream stream;
-        stream << value.x() << " " << value.y();
-        overrideString(setting, category, stream.str());
     }
 }

@@ -66,6 +66,7 @@ add_component_dir (settings
     categories/stereoview
     categories/terrain
     categories/video
+    categories/vr
     categories/water
     categories/windows
     parser

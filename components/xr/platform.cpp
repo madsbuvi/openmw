@@ -1,4 +1,5 @@
-#include <components/misc/stringops.hpp>
+#include <components/misc/strings/lower.hpp>
+#include <components/misc/strings/algorithm.hpp>
 #include <components/sceneutil/color.hpp>
 #include <components/sceneutil/depth.hpp>
 

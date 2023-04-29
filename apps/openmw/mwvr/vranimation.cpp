@@ -24,6 +24,9 @@
 
 #include <components/settings/settings.hpp>
 
+#include <components/esm3/loadrace.hpp>
+#include <components/esm3/loadench.hpp>
+
 #include <components/misc/constants.hpp>
 
 #include <components/vr/session.hpp>
@@ -457,7 +460,7 @@ namespace MWVR
         Log(Debug::Verbose) << "Calculated character height: " << charHeight.asMeters();
     }
 
-    float VRAnimation::getVelocity(const std::string& groupname) const
+    float VRAnimation::getVelocity(const std::string_view groupname) const
     {
         return 0.0f;
     }

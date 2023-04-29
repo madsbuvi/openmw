@@ -227,6 +227,14 @@ namespace MWWorld
         //    ToUTF8::Utf8Encoder* encoder, int activationDistanceOverride, const std::string& startCell,
         //    const std::string& startupScript, const std::string& resourcePath, const std::string& userDataPath);
 
+
+        //World(osgViewer::Viewer* viewer, osg::ref_ptr<osg::Group> rootNode, Resource::ResourceSystem* resourceSystem,
+        //    SceneUtil::WorkQueue* workQueue, SceneUtil::UnrefQueue& unrefQueue,
+        //    const Files::Collections& fileCollections, const std::vector<std::string>& contentFiles,
+        //    const std::vector<std::string>& groundcoverFiles, ToUTF8::Utf8Encoder* encoder,
+        //    int activationDistanceOverride, const std::string& startCell, const std::filesystem::path& userDataPath);
+
+
         
         World(osgViewer::Viewer* viewer, osg::ref_ptr<osg::Group> rootNode, Resource::ResourceSystem* resourceSystem,
             SceneUtil::WorkQueue* workQueue, SceneUtil::UnrefQueue& unrefQueue,

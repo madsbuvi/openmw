@@ -24,6 +24,7 @@
 #include <components/sceneutil/statesetupdater.hpp>
 
 #include <components/settings/settings.hpp>
+#include <components/vr/vr.hpp>
 
 namespace Stereo
 {
@@ -415,7 +416,7 @@ namespace Stereo
     bool getStereo()
     {
         static bool stereo = Settings::Manager::getBool("stereo enabled", "Stereo")
-            || osg::DisplaySettings::instance().get()->getStereo();
+            || osg::DisplaySettings::instance().get()->getStereo() || VR::getVR();
         return stereo;
     }
 

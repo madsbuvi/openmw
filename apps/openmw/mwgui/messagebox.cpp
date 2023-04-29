@@ -89,7 +89,6 @@ namespace MWGui
             mStaticMessageBox = box.get();
 
         box->setVisible(mVisible);
-
         mMessageBoxes.push_back(std::move(box));
 
         if (mMessageBoxes.size() > 3)
@@ -104,7 +103,7 @@ namespace MWGui
             height += messageBox->getHeight();
         }
 
-        box->setVisible(true);
+        mMessageBoxes.back()->setVisible(true);
     }
 
     void MessageBoxManager::removeStaticMessageBox()

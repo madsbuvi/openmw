@@ -317,9 +317,10 @@ namespace MWWorld
             mNavigator = DetourNavigator::makeNavigatorStub();
         }
 
-        mRendering = std::make_unique<MWRender::RenderingManager>(viewer, rootNode, std::move(camera), resourceSystem,
-            viewer, rootNode, resourceSystem, workQueue, *mNavigator, mGroundcoverStore, unrefQueue); // MERGETODO:
-            workQueue, resourcePath, *mNavigator, mGroundcoverStore, unrefQueue);
+        mRendering = std::make_unique<MWRender::RenderingManager>(
+            viewer, rootNode, std::move(camera), resourceSystem, workQueue, *mNavigator, mGroundcoverStore, unrefQueue);
+
+
         mProjectileManager = std::make_unique<ProjectileManager>(
             mRendering->getLightRoot()->asGroup(), resourceSystem, mRendering.get(), mPhysics.get());
         mRendering->preloadCommonAssets();

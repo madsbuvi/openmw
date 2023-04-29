@@ -59,7 +59,7 @@ namespace MWVR
                 dropped = world->placeObject(item.mBase, mVRPointer->getPointerRay(), count);
             else
                 dropped = world->dropObjectOnGround(world->getPlayerPtr(), item.mBase, count);
-            dropped.getCellRef().setOwner("");
+            dropped.getCellRef().setOwner(ESM::RefId());
 
             return dropped;
         }
@@ -142,8 +142,8 @@ namespace MWVR
 
     bool UserPointer::tryProbePick(MWWorld::Ptr target)
     {
-        std::string resultMessage = "";
-        std::string resultSound = "";
+        std::string_view resultMessage = "";
+        std::string_view resultSound = "";
 
         MWWorld::Player& player = MWBase::Environment::get().getWorld()->getPlayer();
         if (player.getDrawState() == MWMechanics::DrawState::Weapon)
@@ -166,7 +166,7 @@ namespace MWVR
             if (!resultSound.empty())
             {
                 MWBase::SoundManager* sndMgr = MWBase::Environment::get().getSoundManager();
-                sndMgr->playSound3D(target, resultSound, 1.0f, 1.0f);
+                sndMgr->playSound3D(target, ESM::RefId::stringRefId(resultSound), 1.0f, 1.0f);
             }
         }
 

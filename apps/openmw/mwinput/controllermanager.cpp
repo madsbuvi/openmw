@@ -118,46 +118,12 @@ namespace MWInput
             float xAxis = mBindingsManager->getActionValue(A_MoveLeftRight);
             float yAxis = mBindingsManager->getActionValue(A_MoveForwardBackward);
             if (xAxis != 0.5 || yAxis != 0.5)
-            // MERGETODO: More things that don't fit in anywhere anymore.
-            float scale = 1.f;
-
-            if (VR::getVR() && !mThumbstickAutoRun)
-            {
-                bool isRunningAllowed
-                    = (mBindingsManager->actionIsActive(A_Run) || mActionManager->isAlwaysRunActive());
-                if (!isRunningAllowed)
-                {
-                    auto l = osg::Vec2f(xAxis * 2 - 1, yAxis * 2 - 1).length();
-                    if (l > 0.5f)
-                    {
-                        scale = l / 0.5f;
-                    }
-                }
-            }
-
-                player.setLeftRight((xAxis - 0.5f) * 2 / scale);
-                player.setForwardBackward((0.5f - yAxis) * 2 / scale);
             {
                 mJoystickLastUsed = true;
                 MWBase::Environment::get().getInputManager()->resetIdleTime();
             }
-                if (mJoystickLastUsed && !(VR::getVR()))
         }
     }
-                {
-                    if (mActionManager->isSneaking())
-                    {
-                        if (mBindingsManager->actionIsActive(A_Sneak))
-                        {
-                            mActionManager->toggleSneaking();
-                            player.setSneak(mBindingsManager->actionIsActive(A_Sneak));
-                        }
-                    }
-                    else
-                        player.setSneak(mBindingsManager->actionIsActive(A_Sneak));
-                }
-            }
-        }
 
     void ControllerManager::buttonPressed(int deviceID, const SDL_ControllerButtonEvent& arg)
     {

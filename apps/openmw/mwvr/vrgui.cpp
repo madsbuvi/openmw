@@ -19,7 +19,6 @@
 #include <osgViewer/Viewer>
 
 #include <components/misc/constants.hpp>
-#include <components/misc/stringops.hpp>
 #include <components/myguiplatform/additivelayer.hpp>
 #include <components/myguiplatform/myguirendermanager.hpp>
 #include <components/myguiplatform/scalinglayer.hpp>
@@ -308,44 +307,31 @@ namespace MWVR
 
         mTrackingPath = VR::stringToVRPath(mConfig.trackingPath);
 
-        // if (Paths::isTrueHUD(mTrackingPath))
-        //{
-        //     auto* xrNode = new XrGUIRTT(config.pixelResolution.x(), config.pixelResolution.y(), osg::Vec4(0, 0, 0,
-        //     config.opacity), mMyGUICamera); mGUIRTT = xrNode; mVrLayer = std::make_shared<VR::QuadLayer>();
-        //     mVrLayer->blendAlpha = true;
-        //     mVrLayer->colorSwapchain = xrNode->getColorSwapchain();
-        //     mVrLayer->premultipliedAlpha = false;
-        //     mVrLayer->extent = extent_units;
-        //     mVrLayer->space = VR::ReferenceSpace::View;
-        // }
-        // else
-        {
-            auto* rttNode = new GUIRTT(config.pixelResolution.x(), config.pixelResolution.y(),
-                osg::Vec4(0, 0, 0, config.opacity), mMyGUICamera);
-            mGUIRTT = rttNode;
-            mStateset = new osg::StateSet;
+        auto* rttNode = new GUIRTT(config.pixelResolution.x(), config.pixelResolution.y(),
+            osg::Vec4(0, 0, 0, config.opacity), mMyGUICamera);
+        mGUIRTT = rttNode;
+        mStateset = new osg::StateSet;
 
-            // Define state set that allows rendering with transparency
-            auto texture = rttNode->getColorTexture(nullptr);
-            texture->setName("diffuseMap");
-            mStateset->setTextureAttributeAndModes(0, texture, osg::StateAttribute::ON);
+        // Define state set that allows rendering with transparency
+        auto texture = rttNode->getColorTexture(nullptr);
+        texture->setName("diffuseMap");
+        mStateset->setTextureAttributeAndModes(0, texture, osg::StateAttribute::ON);
 
-            osg::ref_ptr<osg::Material> mat = new osg::Material;
-            mat->setColorMode(osg::Material::AMBIENT_AND_DIFFUSE);
-            mStateset->setAttribute(mat);
+        osg::ref_ptr<osg::Material> mat = new osg::Material;
+        mat->setColorMode(osg::Material::AMBIENT_AND_DIFFUSE);
+        mStateset->setAttribute(mat);
 
-            mStateset->setMode(GL_ALPHA_TEST, osg::StateAttribute::OFF);
+        mStateset->setMode(GL_ALPHA_TEST, osg::StateAttribute::OFF);
 
-            mGeometries[0] = createLayerGeometry(mStateset);
-            mGeometries[0]->setUserData(new VRGUILayerUserData(this));
-            mGeometries[1] = createLayerGeometry(mStateset);
-            mGeometries[1]->setUserData(mGeometries[0]->getUserData());
+        mGeometries[0] = createLayerGeometry(mStateset);
+        mGeometries[0]->setUserData(new VRGUILayerUserData(this));
+        mGeometries[1] = createLayerGeometry(mStateset);
+        mGeometries[1]->setUserData(mGeometries[0]->getUserData());
 
-            // Position in the game world
-            mTransform->setScale(osg::Vec3(extent_units.x(), 1.f, extent_units.y()));
-            mTransform->setCullCallback(new CullVRGUILayerCallback(this));
-            mTransform->setCullingActive(false);
-        }
+        // Position in the game world
+        mTransform->setScale(osg::Vec3(extent_units.x(), 1.f, extent_units.y()));
+        mTransform->setCullCallback(new CullVRGUILayerCallback(this));
+        mTransform->setCullingActive(false);
     }
 
     VRGUILayer::~VRGUILayer()

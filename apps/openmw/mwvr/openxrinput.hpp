@@ -11,6 +11,7 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <filesystem>
 
 class TiXmlElement;
 
@@ -32,6 +33,7 @@ namespace MWVR
         A_RadialMenu,
         A_MovementStick,
         A_UtilityStick,
+        A_ToggleSneak,
         A_VrLast
     };
 
@@ -53,8 +55,8 @@ namespace MWVR
         using XrProfileSuggestedBindings = std::map<std::string, XrSuggestedBindings>;
 
         //! Default constructor, creates two ActionSets: Gameplay and GUI
-        OpenXRInput(
-            const std::string& xrControllerSuggestionsFile, const std::string& defaultXrControllerSuggestionsFile);
+        OpenXRInput(const std::filesystem::path& xrControllerSuggestionsFile,
+            const std::filesystem::path& defaultXrControllerSuggestionsFile);
         void createActionSets();
         void createGameplayActions();
         void createGUIActions();
@@ -89,8 +91,8 @@ namespace MWVR
         void createMWAction(MWActionSet actionSet, XR::ControlType controlType, int openMWAction,
             const std::string& actionName, const std::string& localName, std::vector<VR::SubAction> subActions = {});
 
-        std::string mXrControllerSuggestionsFile;
-        std::string mDefaultXrControllerSuggestionsFile;
+        std::filesystem::path mXrControllerSuggestionsFile;
+        std::filesystem::path mDefaultXrControllerSuggestionsFile;
         std::shared_ptr<XR::AxisDeadzone> mDeadzone{ std::make_shared<XR::AxisDeadzone>() };
         std::map<std::string, std::string> mInteractionProfileLocalNames{};
         std::map<MWActionSet, XR::ActionSet> mActionSets{};

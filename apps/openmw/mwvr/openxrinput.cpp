@@ -2,7 +2,7 @@
 
 #include <openxr/openxr.h>
 
-#include <components/misc/stringops.hpp>
+#include <components/misc/strings/algorithm.hpp>
 #include <components/vr/trackingmanager.hpp>
 #include <components/xr/debug.hpp>
 #include <components/xr/instance.hpp>
@@ -17,8 +17,8 @@
 namespace MWVR
 {
 
-    OpenXRInput::OpenXRInput(
-        const std::string& xrControllerSuggestionsFile, const std::string& defaultXrControllerSuggestionsFile)
+    OpenXRInput::OpenXRInput(const std::filesystem::path& xrControllerSuggestionsFile,
+        const std::filesystem::path& defaultXrControllerSuggestionsFile)
         : mXrControllerSuggestionsFile(xrControllerSuggestionsFile)
         , mDefaultXrControllerSuggestionsFile(defaultXrControllerSuggestionsFile)
     {
@@ -79,7 +79,7 @@ namespace MWVR
         createMWAction(MWActionSet::Gameplay, XR::ControlType::Press, MWInput::A_ToggleThumbstickAutoRun,
             "toggle_thumbstick_auto_run", "Toggle Thumbstick Auto Run");
         createMWAction(
-            MWActionSet::Gameplay, XR::ControlType::Press, MWInput::A_ToggleSneak, "toggle_sneak", "Toggle Sneak");
+            MWActionSet::Gameplay, XR::ControlType::Press, A_ToggleSneak, "toggle_sneak", "Toggle Sneak");
         createMWAction(MWActionSet::Gameplay, XR::ControlType::LongPress, A_RadialMenu, "radial_menu", "Radial Menu");
         createMWAction(
             MWActionSet::Gameplay, XR::ControlType::Axis2D, A_MovementStick, "movement_stick", "Movement Stick");
@@ -134,14 +134,13 @@ namespace MWVR
 
         TiXmlDocument* xmlDoc = nullptr;
         TiXmlElement* xmlRoot = nullptr;
-
-        xmlDoc = new TiXmlDocument(mXrControllerSuggestionsFile.c_str());
+        xmlDoc = new TiXmlDocument(mXrControllerSuggestionsFile.string().c_str());
         xmlDoc->LoadFile();
 
         if (xmlDoc->Error())
         {
             std::ostringstream message;
-            message << "TinyXml reported an error reading \"" + mXrControllerSuggestionsFile + "\". Row "
+            message << "TinyXml reported an error reading \"" + mXrControllerSuggestionsFile.string() + "\". Row "
                     << (int)xmlDoc->ErrorRow() << ", Col " << (int)xmlDoc->ErrorCol() << ": " << xmlDoc->ErrorDesc();
             Log(Debug::Error) << message.str();
             throw std::runtime_error(message.str());

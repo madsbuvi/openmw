@@ -186,7 +186,7 @@ namespace MWRender
                 if (Settings::Manager::getBool("skywind blaster workaround", "VR Debug"))
                 {
                     // Skywind has a blaster asset that doesn't properly orient projectiles before launching them
-                    auto id = ammo->getCellRef().getRefId();
+                    auto id = ammo->getCellRef().getRefId().getRefIdString();
                     if (id.find("sw_blastbolt") == std::string::npos)
                         orient = osg::computeLocalToWorld(nodepaths[0]).getRotate();
                 }

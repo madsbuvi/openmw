@@ -45,10 +45,7 @@ namespace Settings
         static std::filesystem::path load(const Files::ConfigurationManager& cfgMgr, bool loadEditorSettings = false);
         ///< load settings from all active config dirs. Returns the path of the last loaded file.
 
-        static void loadOverrides(const std::string& file);
-        ///< load file as settings overrides
-
-        static void saveUser(const std::string& file);
+        static void saveUser(const std::filesystem::path& file);
         ///< save user settings to file
 
         static void resetPendingChanges();
@@ -105,12 +102,6 @@ namespace Settings
         static void set(std::string_view setting, std::string_view category, bool value);
         static void set(std::string_view setting, std::string_view category, const osg::Vec2f& value);
         static void set(std::string_view setting, std::string_view category, const osg::Vec3f& value);
-        static void overrideInt(const std::string& setting, const std::string& category, const int value);
-        static void overrideFloat(const std::string& setting, const std::string& category, const float value);
-        static void overrideString(const std::string& setting, const std::string& category, const std::string& value);
-        static void overrideBool(const std::string& setting, const std::string& category, const bool value);
-        static void overrideVector2(const std::string& setting, const std::string& category, const osg::Vec2f value);
-        static void overrideVector3(const std::string& setting, const std::string& category, const osg::Vec3f value);
 
     private:
         static std::set<std::pair<std::string_view, std::string_view>> sInitialized;

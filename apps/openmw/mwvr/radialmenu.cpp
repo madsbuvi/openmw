@@ -16,6 +16,7 @@
 #include "../mwgui/quickkeysmenu.hpp"
 
 #include <components/vr/session.hpp>
+#include <components/esm3/quickkeys.hpp>
 
 #include "vrutil.hpp"
 
@@ -113,7 +114,7 @@ namespace MWVR
                 button->setUserString(userString.first, userString.second);
             }
 
-            if (key->type == MWGui::QuickKeysMenu::Type_HandToHand)
+            if (key->type == ESM::QuickKeys::Type::HandToHand)
             {
                 MyGUI::ImageBox* image = button->createWidget<MyGUI::ImageBox>(
                     "ImageBox", MyGUI::IntCoord(14, 13, 32, 32), MyGUI::Align::Default);
@@ -121,7 +122,7 @@ namespace MWVR
                 image->setImageTexture("icons\\k\\stealth_handtohand.dds");
                 image->setNeedMouseFocus(false);
             }
-            else if (key->type == MWGui::QuickKeysMenu::Type_Unassigned)
+            else if (key->type == ESM::QuickKeys::Type::Unassigned)
             {
                 MyGUI::TextBox* textBox = button->createWidgetReal<MyGUI::TextBox>(
                     "SandText", MyGUI::FloatCoord(0, 0, 1, 1), MyGUI::Align::Default);

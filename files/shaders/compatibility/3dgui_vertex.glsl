@@ -1,11 +1,11 @@
 #version 120
 
-#include "openmw_vertex.h.glsl"
+#include "lib/core/vertex.h.glsl"
 
 varying vec2 diffuseMapUV;
 
 void main()
 {
-    gl_Position = mw_modelToClip(gl_Vertex);
+    gl_Position = modelToClip(gl_Vertex);
     diffuseMapUV = gl_MultiTexCoord0.xy;
 }
