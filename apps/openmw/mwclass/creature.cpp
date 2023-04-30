@@ -225,7 +225,8 @@ namespace MWClass
         return ptr.getRefData().getCustomData()->asCreatureCustomData().mCreatureStats;
     }
 
-    bool Creature::evaluateHit(const MWWorld::Ptr& ptr, MWWorld::Ptr& victim, osg::Vec3f& hitPosition) const
+    bool Creature::evaluateHit(const MWWorld::Ptr& ptr, MWWorld::Ptr& victim, osg::Vec3f& hitPosition,
+        std::optional<osg::Vec3f> origin, std::optional<osg::Quat> originOrientation) const
     {
         victim = MWWorld::Ptr();
         hitPosition = osg::Vec3f();
@@ -252,7 +253,7 @@ namespace MWClass
         getCreatureStats(ptr).getAiSequence().getCombatTargets(targetActors);
 
         std::pair<MWWorld::Ptr, osg::Vec3f> result
-            = MWBase::Environment::get().getWorld()->getHitContact(ptr, dist, targetActors);
+            = MWBase::Environment::get().getWorld()->getHitContact(ptr, dist, targetActors, origin, originOrientation);
         if (result.first.isEmpty()) // Didn't hit anything
             return true;
 

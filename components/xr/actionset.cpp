@@ -36,7 +36,7 @@ namespace XR
     }
 
     void ActionSet::createPoseAction(
-        const std::string& actionName, const std::string& localName, std::vector<VR::SubAction> subActions)
+        const std::string& actionName, const std::string& localName, XrPath path, std::vector<VR::SubAction> subActions)
     {
         auto action = createXRAction(XR_ACTION_TYPE_POSE_INPUT, actionName, localName, subActions);
 
@@ -44,7 +44,7 @@ namespace XR
             subActions = { VR::SubAction::ALL };
         for (auto subAction : subActions)
         {
-            mTrackerMap.emplace(subAction, new PoseAction(action, subAction));
+            mTrackerMap.emplace(path, new PoseAction(action, subAction));
         }
     }
 
@@ -149,10 +149,19 @@ namespace XR
         std::vector<XrActionSuggestedBinding> suggestedBindings;
         if (!mTrackerMap.empty())
         {
-            suggestedBindings.emplace_back(XrActionSuggestedBinding{
-                mTrackerMap[VR::SubAction::HandLeft]->xrAction(), getXrPath("/user/hand/left/input/aim/pose") });
-            suggestedBindings.emplace_back(XrActionSuggestedBinding{
-                mTrackerMap[VR::SubAction::HandRight]->xrAction(), getXrPath("/user/hand/right/input/aim/pose") });
+            auto leftAimPath = getXrPath("/user/hand/left/input/aim/pose");
+            auto leftGripPath = getXrPath("/user/hand/left/input/grip/pose");
+            auto rightAimPath = getXrPath("/user/hand/right/input/aim/pose");
+            auto rightGripPath = getXrPath("/user/hand/right/input/grip/pose");
+
+            suggestedBindings.emplace_back(
+                XrActionSuggestedBinding{ mTrackerMap[leftAimPath]->xrAction(), leftAimPath });
+            suggestedBindings.emplace_back(
+                XrActionSuggestedBinding{ mTrackerMap[leftGripPath]->xrAction(), leftGripPath });
+            suggestedBindings.emplace_back(
+                XrActionSuggestedBinding{ mTrackerMap[rightAimPath]->xrAction(), rightAimPath });
+            suggestedBindings.emplace_back(
+                XrActionSuggestedBinding{ mTrackerMap[rightGripPath]->xrAction(), rightGripPath });
         }
         if (!mHapticsMap.empty())
         {
@@ -176,9 +185,9 @@ namespace XR
         xrSuggestedBindings.insert(xrSuggestedBindings.end(), suggestedBindings.begin(), suggestedBindings.end());
     }
 
-    XrSpace ActionSet::xrActionSpace(VR::SubAction side)
+    XrSpace ActionSet::xrActionSpace(XrPath space)
     {
-        return mTrackerMap[side]->xrSpace();
+        return mTrackerMap[space]->xrSpace();
     }
 
     std::shared_ptr<XR::Action> ActionSet::createXRAction(XrActionType actionType, const std::string& actionName,

@@ -555,8 +555,8 @@ namespace MWClass
         return ptr.getRefData().getCustomData()->asNpcCustomData().mNpcStats;
     }
 
-    // MERGETODO: same as in creature.cpp
-    bool Npc::evaluateHit(const MWWorld::Ptr& ptr, MWWorld::Ptr& victim, osg::Vec3f& hitPosition) const
+    bool Npc::evaluateHit(const MWWorld::Ptr& ptr, MWWorld::Ptr& victim, osg::Vec3f& hitPosition,
+        std::optional<osg::Vec3f> origin, std::optional<osg::Quat> originOrientation) const
     {
         victim = MWWorld::Ptr();
         hitPosition = osg::Vec3f();
@@ -582,7 +582,7 @@ namespace MWClass
             getCreatureStats(ptr).getAiSequence().getCombatTargets(targetActors);
 
         // TODO: Use second to work out the hit angle
-        std::pair<MWWorld::Ptr, osg::Vec3f> result = world->getHitContact(ptr, dist, targetActors);
+        std::pair<MWWorld::Ptr, osg::Vec3f> result = world->getHitContact(ptr, dist, targetActors, origin, originOrientation);
         if (result.first.isEmpty()) // Didn't hit anything
             return true;
 

@@ -8,8 +8,8 @@
 #include <vector>
 
 #include "../mwworld/ptr.hpp"
+#include <components/vr/vr.hpp>
 #include <components/vr/trackinglistener.hpp>
-#include <components/vr/trackingpath.hpp>
 
 namespace XR
 {
@@ -21,11 +21,6 @@ namespace MWVR
 {
     class OpenXRInput;
     class UserPointer;
-
-    namespace RealisticCombat
-    {
-        class StateMachine;
-    }
 
     /// Extension of the input manager to include VR inputs
     class VRInputManager : public MWInput::InputManager
@@ -81,7 +76,6 @@ namespace MWVR
 
         void updateVRPointer(bool disableControls);
         void updateCombat(float dt);
-        void updateRealisticCombat(float dt);
         void pointActivation(bool onPress);
 
         void injectMousePress(int sdlButton, bool onPress);
@@ -96,13 +90,11 @@ namespace MWVR
         float smoothTurnRate(float dt) const;
 
         int interactiveMessageBox(const std::string& message, const std::vector<std::string>& buttons);
-        void updatePhysicalSneak(Stereo::Unit headsetHeight);
 
     private:
         osg::observer_ptr<osgViewer::Viewer> mOSGViewer;
         std::unique_ptr<UserPointer> mVRPointer;
         std::unique_ptr<OpenXRInput> mXRInput;
-        std::unique_ptr<RealisticCombat::StateMachine> mRealisticCombat;
         bool mPointerLeft = false;
         bool mPointerRight = false;
         bool mHapticsEnabled = true;
@@ -122,15 +114,6 @@ namespace MWVR
         VR::VRPath mRightHandPath;
         VR::VRPath mRightHandWorldPath;
         VR::VRPath mHeadWorldPath;
-
-        class HeightUpdateListener : public VR::TrackingListener
-        {
-            VR::VRPath mHeadPath = VR::stringToVRPath("/stage/user/head/input/pose");
-
-            void onTrackingUpdated(VR::TrackingManager& manager, VR::DisplayTime predictedDisplayTime) override;
-        };
-
-        HeightUpdateListener mHeightUpdateListener;
     };
 }
 

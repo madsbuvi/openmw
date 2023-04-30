@@ -14,10 +14,10 @@
 #include <osg/TexMat>
 #include <osg/Texture2D>
 
+#include <components/vr/vr.hpp>
 #include <components/vr/session.hpp>
 #include <components/vr/layer.hpp>
 #include <components/vr/trackinglistener.hpp>
-#include <components/vr/trackingpath.hpp>
 #include <components/vr/trackingsource.hpp>
 
 namespace MyGUI
@@ -96,7 +96,7 @@ namespace MWVR
         void resetStationaryPoseHeight();
 
     protected:
-        virtual VR::TrackingPose locate(VR::VRPath path, VR::DisplayTime predictedDisplayTime) override;
+        virtual VR::TrackingPose locate(VR::VRPath path) override;
 
     private:
         VR::TrackingPose mStationaryPose = VR::TrackingPose();
@@ -149,7 +149,7 @@ namespace MWVR
         void addToSceneGraph();
 
         /// Update layer quads based on current tracking information
-        void onTrackingUpdated(VR::TrackingManager& manager, VR::DisplayTime predictedDisplayTime) override;
+        void onTrackingUpdated(VR::TrackingManager& manager) override;
 
     public:
         VR::VRPath mTrackingPath = 0;

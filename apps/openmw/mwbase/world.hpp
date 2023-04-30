@@ -279,8 +279,9 @@ namespace MWBase
         /// Returns a pointer to the object the provided object would hit (if within the
         /// specified distance), and the point where the hit occurs. This will attempt to
         /// use the "Head" node, or alternatively the "Bip01 Head" node as a basis.
-        virtual std::pair<MWWorld::Ptr, osg::Vec3f> getHitContact(
-            const MWWorld::ConstPtr& ptr, float distance, std::vector<MWWorld::Ptr>& targets)
+        virtual std::pair<MWWorld::Ptr, osg::Vec3f> getHitContact(const MWWorld::ConstPtr& ptr, float distance,
+            std::vector<MWWorld::Ptr>& targets, std::optional<osg::Vec3f> origin = std::nullopt,
+            std::optional<osg::Quat> originOrientation = std::nullopt)
             = 0;
 
         virtual void adjustPosition(const MWWorld::Ptr& ptr, bool force) = 0;

@@ -64,6 +64,7 @@ add_openmw_dir (mwlua
     camerabindings uibindings inputbindings nearbybindings postprocessingbindings stats debugbindings
     types/types types/door types/actor types/container types/weapon types/npc types/creature types/activator types/book types/lockpick types/probe types/apparatus types/potion types/ingredient types/misc types/repair types/armor types/light types/static types/clothing
     worker magicbindings
+    vrbindings
     )
 
 add_openmw_dir (mwsound
@@ -271,7 +272,7 @@ if(BUILD_OPENMW_VR)
 # USE_OPENXR preprocessor switches.
     add_openmw_dir (mwvr
          openxrinput
-         radialmenu realisticcombat 
+         radialmenu 
          vranimation vrgui vrinputmanager vrinput vrlistbox vrmetamenu vrpingpongcallback vrpointer vrtracking vrtypes vrutil vrvirtualkeyboard
         )
 

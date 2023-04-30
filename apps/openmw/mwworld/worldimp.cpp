@@ -985,8 +985,6 @@ namespace MWWorld
         VR::recenter();
     }
 
-
-        VR::recenter();
     void World::changeToCell(
         const ESM::RefId& cellId, const ESM::Position& position, bool adjustPlayerPos, bool changeEvent)
     {
@@ -1077,9 +1075,17 @@ namespace MWWorld
         return osg::Matrixf::translate(actor.getRefData().getPosition().asVec3());
     }
 
-    std::pair<MWWorld::Ptr, osg::Vec3f> World::getHitContact(
-        const MWWorld::ConstPtr& ptr, float distance, std::vector<MWWorld::Ptr>& targets)
+    std::pair<MWWorld::Ptr, osg::Vec3f> World::getHitContact(const MWWorld::ConstPtr& ptr, float distance,
+        std::vector<MWWorld::Ptr>& targets, std::optional<osg::Vec3f> origin,
+        std::optional<osg::Quat> originOrientation)
     {
+        if (origin.has_value() && originOrientation.has_value())
+        {
+            auto result = mPhysics->getHitContact(ptr, *origin, *originOrientation, distance, targets);
+
+            return result;
+        }
+
         const ESM::Position& posdata = ptr.getRefData().getPosition();
 
         osg::Quat rot
@@ -1090,19 +1096,9 @@ namespace MWWorld
         // the origin of hitbox is an actor's front, not center
         distance += halfExtents.y();
 
+
         if (ptr == getPlayerPtr())
         {
-#ifdef USE_OPENXR
-            // Use current aim of weapon to impact
-            Stereo::Pose weaponPose;
-            getWeaponPose(weaponPose);
-
-            auto result = mPhysics->getHitContact(
-                ptr, weaponPose.position.asMWUnits(), weaponPose.orientation, distance, targets);
-            if (!result.first.isEmpty())
-                Log(Debug::Verbose) << "Hit: " << result.first.getTypeDescription();
-            return result;
-#else
             // special cased for better aiming with the camera
             // if we do not hit anything, will use the default approach as fallback
             osg::Vec3f pos = getActorHeadTransform(ptr).getTrans();
@@ -1110,7 +1106,6 @@ namespace MWWorld
             std::pair<MWWorld::Ptr, osg::Vec3f> result = mPhysics->getHitContact(ptr, pos, rot, distance, targets);
             if (!result.first.isEmpty())
                 return std::make_pair(result.first, result.second);
-#endif
         }
 
         osg::Vec3f pos = ptr.getRefData().getPosition().asVec3();
@@ -3020,10 +3015,17 @@ namespace MWWorld
 #ifdef USE_OPENXR
                 if (actor == getPlayerPtr())
                 {
-                    Stereo::Pose weaponPose;
-                    getWeaponPose(weaponPose);
-                    origin = weaponPose.position.asMWUnits();
-                    orient = weaponPose.orientation;
+                    if (VR::getKBMouseModeActive())
+                    {
+                        orient = getActorHeadTransform(actor).getRotate();
+                    }
+                    else
+                    {
+                        Stereo::Pose weaponPose;
+                        getWeaponPose(weaponPose);
+                        origin = weaponPose.position.asMWUnits();
+                        orient = weaponPose.orientation;
+                    }
                 }
 #endif
 

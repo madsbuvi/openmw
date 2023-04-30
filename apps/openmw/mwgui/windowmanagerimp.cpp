@@ -659,8 +659,6 @@ namespace MWGui
             disableUpdateMask = disableCullMask | MWRender::Mask_GUI;
         }
 
-        // MERGETODO: verify behavior
-
         if (!enable && getCullMask() != disableCullMask)
         {
             mOldUpdateMask = mViewer->getUpdateVisitor()->getTraversalMask();

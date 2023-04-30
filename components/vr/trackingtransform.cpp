@@ -14,9 +14,9 @@ namespace VR
     {
     }
 
-    void TrackingTransform::onTrackingUpdated(TrackingManager& manager, DisplayTime predictedDisplayTime)
+    void TrackingTransform::onTrackingUpdated(TrackingManager& manager)
     {
-        auto pose = manager.locate(mPath, predictedDisplayTime);
+        auto pose = manager.locate(mPath);
         if (!!pose.status)
         {
             _matrix.makeIdentity();

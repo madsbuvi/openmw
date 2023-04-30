@@ -274,10 +274,44 @@ namespace MWVR
     class TrackingController
     {
     public:
-        TrackingController(VR::VRPath trackingPath, VR::VRPath topLevelPath, osg::Vec3 baseOffset, bool left)
+        TrackingController(VR::VRPath trackingPath)
             : mTrackingPath(trackingPath)
-            , mTopLevelPath(topLevelPath)
             , mTransform(nullptr)
+        {
+        }
+        virtual void onTrackingUpdated(VR::TrackingManager& manager)
+        {
+            if (!mTransform)
+                return;
+
+            auto tp = manager.locate(mTrackingPath);
+            if (!tp.status)
+                return;
+
+            // Get current world transform of limb
+            osg::Matrix worldToLimb = osg::computeWorldToLocal(mTransform->getParentalNodePaths()[0]);
+            // Get current world of the reference node
+            osg::Matrix worldReference = osg::Matrix::identity();
+            // New transform based on tracking.
+            worldReference.preMultTranslate(tp.pose.position.asMWUnits());
+            worldReference.preMultRotate(tp.pose.orientation);
+
+            // Finally, set transform
+            mTransform->setMatrix(worldReference * worldToLimb * mTransform->getMatrix());
+        }
+
+        void setTransform(osg::MatrixTransform* transform) { mTransform = transform; }
+
+        VR::VRPath mTrackingPath;
+        osg::ref_ptr<osg::MatrixTransform> mTransform;
+    };
+
+    class TrackingControllerHands : public TrackingController
+    {
+    public:
+        TrackingControllerHands(VR::VRPath trackingPath, VR::VRPath topLevelPath, osg::Vec3 baseOffset, bool left)
+            : TrackingController(trackingPath)
+            , mTopLevelPath(topLevelPath)
             , mBaseOffset(baseOffset)
             , mBaseOrientation(osg::PI_2, osg::Vec3f(0, 0, 1))
             , mLeft(left)
@@ -286,16 +320,16 @@ namespace MWVR
                 mBaseOrientation = osg::Quat(osg::PI, osg::Vec3f(1, 0, 0)) * mBaseOrientation;
         }
 
-        void onTrackingUpdated(VR::TrackingManager& manager, VR::DisplayTime predictedDisplayTime)
+        void onTrackingUpdated(VR::TrackingManager& manager)
         {
             if (!mTransform)
                 return;
 
-            auto tp = manager.locate(mTrackingPath, predictedDisplayTime);
+            auto tp = manager.locate(mTrackingPath);
             if (!tp.status)
                 return;
 
-            if (!VR::Session::instance().getInteractionProfileActive(mTopLevelPath))
+            if (mTopLevelPath && !VR::Session::instance().getInteractionProfileActive(mTopLevelPath))
                 return;
 
             auto orientation = (mBaseOrientation)*tp.pose.orientation;
@@ -327,11 +361,7 @@ namespace MWVR
             mTransform->setMatrix(worldReference * worldToLimb * mTransform->getMatrix());
         }
 
-        void setTransform(osg::MatrixTransform* transform) { mTransform = transform; }
-
-        VR::VRPath mTrackingPath;
         VR::VRPath mTopLevelPath;
-        osg::ref_ptr<osg::MatrixTransform> mTransform;
         osg::Vec3 mBaseOffset;
         osg::Quat mBaseOrientation;
         bool mLeft;
@@ -351,6 +381,8 @@ namespace MWVR
         , mCrosshairsEnabled(false)
         , mSceneRoot(sceneRoot)
         , mWorldHeadPath(VR::stringToVRPath("/world/user/head/input/pose"))
+        , mWorldRightGripPath(VR::stringToVRPath("/world/user/hand/right/input/grip/pose"))
+        , mWorldRightAimPath(VR::stringToVRPath("/world/user/hand/right/input/aim/pose"))
     {
         for (int i = 0; i < 2; i++)
         {
@@ -383,14 +415,19 @@ namespace MWVR
             auto topLevelPath = VR::stringToVRPath("/user/hand/right");
             auto path = VR::stringToVRPath("/world/user/hand/right/input/aim/pose");
             mVrControllers.emplace(
-                "bip01 r forearm", std::make_unique<TrackingController>(path, topLevelPath, offset, false));
+                "bip01 r forearm", std::make_unique<TrackingControllerHands>(path, topLevelPath, offset, false));
         }
 
         {
             auto topLevelPath = VR::stringToVRPath("/user/hand/left");
             auto path = VR::stringToVRPath("/world/user/hand/left/input/aim/pose");
             mVrControllers.emplace(
-                "bip01 l forearm", std::make_unique<TrackingController>(path, topLevelPath, offset, true));
+                "bip01 l forearm", std::make_unique<TrackingControllerHands>(path, topLevelPath, offset, true));
+        }
+
+        {
+            mVrControllers.emplace(
+                "bip01 head", std::make_unique<TrackingController>(mWorldHeadPath));
         }
     }
 
@@ -465,12 +502,12 @@ namespace MWVR
         return 0.0f;
     }
 
-    void VRAnimation::onTrackingUpdated(VR::TrackingManager& manager, VR::DisplayTime predictedDisplayTime)
+    void VRAnimation::onTrackingUpdated(VR::TrackingManager& manager)
     {
         if (mSkeleton)
             mSkeleton->markBoneMatriceDirty();
 
-        auto tp = manager.locate(mWorldHeadPath, predictedDisplayTime);
+        auto tp = manager.locate(mWorldHeadPath);
 
         if (!!tp.status)
         {
@@ -494,7 +531,7 @@ namespace MWVR
 
             if (VR::Session::instance().handDirectedMovement())
             {
-                tp = manager.locate(VR::stringToVRPath("/world/user/hand/left/input/aim/pose"), predictedDisplayTime);
+                tp = manager.locate(VR::stringToVRPath("/world/user/hand/left/input/aim/pose"));
                 float handYaw = 0.f;
                 float handPitch = 0.f;
                 float handRoll = 0.f;
@@ -512,13 +549,19 @@ namespace MWVR
         }
 
         for (auto& controller : mVrControllers)
-            controller.second->onTrackingUpdated(manager, predictedDisplayTime);
+            controller.second->onTrackingUpdated(manager);
     }
 
     void VRAnimation::updateCrosshairs()
     {
         if (!mCrosshairsEnabled)
             return;
+
+        mCrosshairGrip->hide();
+        mCrosshairGrip->setParent(mGripCrosshairTransform);
+
+        mCrosshairAim->hide();
+        mCrosshairAim->setParent(mAimCrosshairTransform);
 
         mCrosshairAmmo->hide();
         mCrosshairSpell->hide();
@@ -628,7 +671,7 @@ namespace MWVR
             // TODO: Should probably create an accessor for Slot_CarriedRight's WeaponType so this verbose code
             // doens't have to be repeated everywhere.
             MWWorld::ConstContainerStoreIterator weapon = inv.getSlot(MWWorld::InventoryStore::Slot_CarriedRight);
-            if (weapon != inv.end())
+            if (weapon != inv.end() && weapon->getType() == ESM::Weapon::sRecordId)
             {
                 int type = weapon->get<ESM::Weapon>()->mBase->mData.mType;
                 ESM::WeaponType::Class weapclass = MWMechanics::getWeaponType(type)->mWeaponClass;
@@ -660,6 +703,16 @@ namespace MWVR
     void VRAnimation::addControllers()
     {
         NpcAnimation::addControllers();
+
+        auto head = mNodeMap.find("Bip01 Head");
+        if (head != mNodeMap.end())
+        {
+            auto controller = mVrControllers.find(head->first);
+            if (controller != mVrControllers.end())
+            {
+                controller->second->setTransform(head->second);
+            }
+        }
 
         for (int i = 0; i < 2; ++i)
         {
@@ -737,6 +790,16 @@ namespace MWVR
 
         if (enable)
         {
+            mCrosshairGrip = std::make_unique<Crosshair>(nullptr, osg::Vec3f(1.f, 0.33f, 0.33f), 0.1f, 0.40f, false);
+            mCrosshairGrip->setStretch(100.f);
+            mCrosshairGrip->setWidth(0.1f);
+            mCrosshairGrip->setOffset(15.f);
+            mCrosshairGrip->show();
+            mCrosshairAim = std::make_unique<Crosshair>(nullptr, osg::Vec3f(0.33f, 1.f, 0.33f), 0.1f, 0.40f, false);
+            mCrosshairAim->setStretch(100.f);
+            mCrosshairAim->setWidth(0.1f);
+            mCrosshairAim->setOffset(15.f);
+            mCrosshairAim->show();
             mCrosshairAmmo = std::make_unique<Crosshair>(nullptr, osg::Vec3f(0.66f, 1.f, 0.66f), 0.1f, 0.40f, false);
             mCrosshairAmmo->setStretch(100.f);
             mCrosshairAmmo->setWidth(0.1f);
@@ -755,6 +818,12 @@ namespace MWVR
 
             mKBMouseCrosshairTransform = new VR::TrackingTransform(mWorldHeadPath);
             mSceneRoot->addChild(mKBMouseCrosshairTransform);
+
+            mGripCrosshairTransform = new VR::TrackingTransform(mWorldRightGripPath);
+            mSceneRoot->addChild(mGripCrosshairTransform);
+
+            mAimCrosshairTransform = new VR::TrackingTransform(mWorldRightAimPath);
+            mSceneRoot->addChild(mAimCrosshairTransform);
         }
         else
         {

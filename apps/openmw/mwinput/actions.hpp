@@ -70,6 +70,16 @@ namespace MWInput
 
         A_ToggleThumbstickAutoRun,
 
+        #ifdef USE_OPENXR
+        // VR Extensions
+
+        A_VrMetaMenu,
+        A_ShowPointer,
+        A_Recenter,
+        A_RadialMenu,
+        A_ToggleSneak,
+        #endif
+
         A_Last // Marker for the last item
     };
 }

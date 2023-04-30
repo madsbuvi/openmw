@@ -17,23 +17,16 @@ class TiXmlElement;
 
 namespace MWVR
 {
-    /// Extension of MWInput's set of actions.
+    /// Internal actions that will be translated to other actions
     enum VrActions
     {
         A_VrFirst = MWInput::A_Last + 1,
-        A_VrMetaMenu,
-        A_ActivateTouch,
-        A_HapticsLeft,
-        A_HapticsRight,
         A_MenuUpDown,
         A_MenuLeftRight,
         A_MenuSelect,
         A_MenuBack,
-        A_Recenter,
-        A_RadialMenu,
         A_MovementStick,
         A_UtilityStick,
-        A_ToggleSneak,
         A_VrLast
     };
 

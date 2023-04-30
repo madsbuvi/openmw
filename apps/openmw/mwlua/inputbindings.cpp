@@ -11,6 +11,12 @@
 #include "../mwbase/inputmanager.hpp"
 #include "../mwinput/actions.hpp"
 
+#include <components/vr/vr.hpp>
+
+#ifdef USE_OPENXR
+#include "../mwvr/openxrinput.hpp"
+#endif
+
 namespace sol
 {
     template <>
@@ -130,8 +136,16 @@ namespace MWLua
             { "ToggleDebug", MWInput::A_ToggleDebug },
             { "TogglePostProcessorHUD", MWInput::A_TogglePostProcessorHUD },
 
-            { "ZoomIn", MWInput::A_ZoomIn },
+            { "ZoomIn", MWInput::A_ZoomIn }, 
             { "ZoomOut", MWInput::A_ZoomOut },
+
+            // -- VR PATCH BEGIN
+            { "VrMetaMenu", MWInput::A_VrMetaMenu }, 
+            { "ShowPointer", MWInput::A_ShowPointer }, 
+            { "Recenter", MWInput::A_Recenter }, 
+            { "RadialMenu", MWInput::A_RadialMenu }, 
+            { "ToggleSneak", MWInput::A_ToggleSneak }
+            // -- VR PATCH END
         }));
 
         api["CONTROL_SWITCH"]

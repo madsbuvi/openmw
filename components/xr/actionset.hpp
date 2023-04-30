@@ -46,12 +46,12 @@ namespace XR
         void suggestBindings(
             std::vector<XrActionSuggestedBinding>& xrSuggestedBindings, const SuggestedBindings& mwSuggestedBindings);
 
-        XrSpace xrActionSpace(VR::SubAction side);
+        XrSpace xrActionSpace(XrPath path);
 
         void createMWAction(ControlType controlType, int openMWAction, const std::string& actionName,
             const std::string& localName, std::vector<VR::SubAction> subActions = {});
         void createPoseAction(
-            const std::string& actionName, const std::string& localName, std::vector<VR::SubAction> subActions = {});
+            const std::string& actionName, const std::string& localName, XrPath path, std::vector<VR::SubAction> subActions = {});
         void createHapticsAction(
             const std::string& actionName, const std::string& localName, std::vector<VR::SubAction> subActions = {});
 
@@ -69,7 +69,7 @@ namespace XR
         std::string mInternalName{};
         std::map<std::string, std::shared_ptr<Action>> mActionMap;
         std::map<std::pair<int, VR::SubAction>, std::unique_ptr<InputAction>> mInputActionMap;
-        std::map<VR::SubAction, std::unique_ptr<PoseAction>> mTrackerMap;
+        std::map<XrPath, std::unique_ptr<PoseAction>> mTrackerMap;
         std::map<VR::SubAction, std::unique_ptr<HapticsAction>> mHapticsMap;
         std::deque<const InputAction*> mActionQueue{};
         std::shared_ptr<AxisDeadzone> mDeadzone;

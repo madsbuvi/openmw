@@ -27,10 +27,6 @@ namespace Settings
         SettingValue<std::string> mLeftEyeResolutionY{ mIndex, "VR", "left eye resolution y" };
         SettingValue<std::string> mRightEyeResolutionX{ mIndex, "VR", "right eye resolution x" };
         SettingValue<std::string> mRightEyeResolutionY{ mIndex, "VR", "right eye resolution y" };
-        SettingValue<float> mRealisticCombatMinimumSwingVelocity{ mIndex, "VR", "realistic combat minimum swing velocity",
-            makeMaxStrictSanitizerFloat(0.1) };
-        SettingValue<float> mRealisticCombatMaximumSwingVelocity{ mIndex, "VR", "realistic combat maximum swing velocity",
-            makeMaxStrictSanitizerFloat(0.1) };
         SettingValue<bool> mHapticsEnabled{ mIndex, "VR", "haptics enabled" };
         SettingValue<bool> mHandDirectedMovement{ mIndex, "VR", "hand directed movement" };
         SettingValue<std::string> mHudPosition{ mIndex, "VR", "hud position",

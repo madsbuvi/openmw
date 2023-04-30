@@ -127,7 +127,9 @@ namespace MWWorld
         /// (default implementation: throw an exception)
 
         // MERGETODO: see creature.hpp and npc.hpp mergetodo
-        virtual bool evaluateHit(const Ptr& ptr, Ptr& victim, osg::Vec3f& hitPosition) const;
+        virtual bool evaluateHit(const MWWorld::Ptr& ptr, MWWorld::Ptr& victim, osg::Vec3f& hitPosition,
+            std::optional<osg::Vec3f> origin = std::nullopt,
+            std::optional<osg::Quat> originOrientation = std::nullopt) const;
         ///< Evaluate the victim of a melee hit produced by ptr in the current circumstances and return dice roll
         ///< success.
         /// (default implementation: throw an exception)

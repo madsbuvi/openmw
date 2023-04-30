@@ -47,8 +47,6 @@ local startAttack = false
 local autoMove = false
 local movementControlsOverridden = false
 local combatControlsOverridden = false
-        local sneakOffset = settingsVr:get('physicalSneakOffset')
-        if (playerHeight - headPose.position.z).meters > sneakOffset then
 
 local function processMovement()
     local controllerMovement = -input.getAxisValue(input.CONTROLLER_AXIS.MoveForwardBackward)

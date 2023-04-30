@@ -76,6 +76,9 @@ set(BUILTIN_DATA_FILES
     scripts/omw/console/global.lua
     scripts/omw/console/local.lua
     scripts/omw/playercontrols.lua
+    scripts/omw/mwvr/vr.lua
+    scripts/omw/mwvr/vrcontrols.lua
+    scripts/omw/mwvr/vrcombatmelee.lua
     scripts/omw/settings/player.lua
     scripts/omw/settings/global.lua
     scripts/omw/settings/common.lua

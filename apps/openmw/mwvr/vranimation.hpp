@@ -3,8 +3,8 @@
 
 #include "../mwrender/npcanimation.hpp"
 #include "../mwrender/renderingmanager.hpp"
+#include <components/vr/vr.hpp>
 #include <components/vr/trackinglistener.hpp>
-#include <components/vr/trackingpath.hpp>
 
 #include <osg/MatrixTransform>
 
@@ -62,7 +62,7 @@ namespace MWVR
     protected:
         float getVelocity(const std::string_view groupname) const override;
 
-        void onTrackingUpdated(VR::TrackingManager& manager, VR::DisplayTime predictedDisplayTime) override;
+        void onTrackingUpdated(VR::TrackingManager& manager) override;
 
         void updateCrosshairs() override;
 
@@ -83,13 +83,19 @@ namespace MWVR
         osg::ref_ptr<osg::MatrixTransform> mWeaponPointerTransform;
 
         bool mCrosshairsEnabled;
+        std::unique_ptr<MWVR::Crosshair> mCrosshairGrip;
+        std::unique_ptr<MWVR::Crosshair> mCrosshairAim;
         std::unique_ptr<MWVR::Crosshair> mCrosshairAmmo;
         std::unique_ptr<MWVR::Crosshair> mCrosshairThrown;
         std::unique_ptr<MWVR::Crosshair> mCrosshairSpell;
+        osg::ref_ptr<osg::Transform> mGripCrosshairTransform;
+        osg::ref_ptr<osg::Transform> mAimCrosshairTransform;
         osg::ref_ptr<osg::Transform> mKBMouseCrosshairTransform;
         osg::ref_ptr<osg::Group> mSceneRoot;
 
         VR::VRPath mWorldHeadPath;
+        VR::VRPath mWorldRightGripPath;
+        VR::VRPath mWorldRightAimPath;
     };
 
 }

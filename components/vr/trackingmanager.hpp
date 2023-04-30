@@ -1,7 +1,7 @@
 #ifndef VR_TRACKING_MANAGER_H
 #define VR_TRACKING_MANAGER_H
 
-#include <components/vr/trackingpath.hpp>
+#include <components/vr/vr.hpp>
 
 #include <list>
 #include <map>
@@ -33,7 +33,7 @@ namespace VR
 
         void processChangedSettings(const std::set<std::pair<std::string, std::string>>& changed);
 
-        TrackingPose locate(VRPath path, DisplayTime predictedDisplayTime) const;
+        TrackingPose locate(VRPath path) const;
 
         TrackingSource* getTrackingSource(VRPath path) const;
 

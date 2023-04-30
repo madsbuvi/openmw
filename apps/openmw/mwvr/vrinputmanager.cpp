@@ -1,7 +1,6 @@
 #include "vrinputmanager.hpp"
 
 #include "openxrinput.hpp"
-#include "realisticcombat.hpp"
 #include "vranimation.hpp"
 #include "vrgui.hpp"
 #include "vrpointer.hpp"
@@ -114,41 +113,10 @@ namespace MWVR
 
     void VRInputManager::updateCombat(float dt)
     {
-        if (!VR::getKBMouseModeActive())
-            return updateRealisticCombat(dt);
-        else
+        if (VR::getKBMouseModeActive())
         {
             MWBase::Environment::get().getWorld()->setWeaponPosePath(mHeadWorldPath);
         }
-    }
-
-    void VRInputManager::updateRealisticCombat(float dt)
-    {
-        bool guiMode = MWBase::Environment::get().getWindowManager()->isGuiMode();
-
-        if (!guiMode)
-        {
-            auto world = MWBase::Environment::get().getWorld();
-
-            auto& player = world->getPlayer();
-            auto playerPtr = world->getPlayerPtr();
-            if (!mRealisticCombat || mRealisticCombat->ptr() != playerPtr)
-            {
-                // TODO: de-hardcode right-handedness for when ability to equip weapons with left hand is completed
-                auto trackingPath = VR::stringToVRPath("/stage/user/hand/right/input/aim/pose");
-                mRealisticCombat.reset(new RealisticCombat::StateMachine(playerPtr, trackingPath));
-            }
-            bool enabled = !guiMode && player.getDrawState() == MWMechanics::DrawState::Weapon && !player.isDisabled();
-            mRealisticCombat->update(dt, enabled);
-        }
-        else if (mRealisticCombat)
-            mRealisticCombat->update(dt, false);
-
-        auto ptr = MWBase::Environment::get().getWorld()->getPlayerPtr();
-        auto* anim = MWBase::Environment::get().getWorld()->getAnimation(ptr);
-        auto* vrAnim = static_cast<MWVR::VRAnimation*>(anim);
-        mVRAimNode = vrAnim->getWeaponTransform();
-        MWBase::Environment::get().getWorld()->setWeaponPosePath(0);
     }
 
     void VRInputManager::pointActivation(bool onPress)
@@ -288,17 +256,6 @@ namespace MWVR
         return wm->readPressedButton();
     }
 
-    void VRInputManager::updatePhysicalSneak(Stereo::Unit headsetHeight)
-    {
-        // Do physical sneak toggle if necessary
-        const auto playerHeight = VR::Session::instance().playerHeight();
-        if (mPhysicalSneakEnabled && VR::getStandingPlay() && playerHeight.asMeters() > 0.0f)
-        {
-            // MERGETODO: Expose to Lua
-            mIsPhysicalSneak = headsetHeight < playerHeight - mPhysicalSneakHeightOffset;
-        }
-    }
-
     void VRInputManager::calibrate()
     {
         updateVRPointer(false);
@@ -317,9 +274,9 @@ namespace MWVR
             bool receivedTrackingData = false;
             VR::VRPath path = VR::stringToVRPath("/stage/user/head/input/pose");
 
-            void onTrackingUpdated(VR::TrackingManager& manager, VR::DisplayTime predictedDisplayTime) override
+            void onTrackingUpdated(VR::TrackingManager& manager) override
             {
-                auto pose = manager.locate(path, predictedDisplayTime);
+                auto pose = manager.locate(path);
                 if (static_cast<int>(pose.status) > 0)
                 {
                     receivedTrackingData = true;
@@ -531,7 +488,7 @@ namespace MWVR
                     case MWInput::A_Screenshot:
                         mActionManager->screenshot();
                         break;
-                    case A_Recenter:
+                    case MWInput::A_Recenter:
                         MWVR::VRGUIManager::instance().resetStationaryPose();
                         break;
                     case MWInput::A_Use:
@@ -582,7 +539,7 @@ namespace MWVR
             // Hold actions
             switch (action->openMWActionCode())
             {
-                case A_ActivateTouch:
+                case MWInput::A_ShowPointer:
                     resetIdleTime();
 
                     if (action->subAction() == VR::SubAction::HandLeft)
@@ -697,34 +654,13 @@ namespace MWVR
             case MWInput::A_ToggleThumbstickAutoRun:
                 mControllerManager->setThumbstickAutoRun(!mControllerManager->thumbstickAutoRun());
                 break;
-            case A_VrMetaMenu:
+            case MWInput::A_VrMetaMenu:
                 MWBase::Environment::get().getWindowManager()->pushGuiMode(MWGui::GM_VrMetaMenu);
                 break;
-            case A_RadialMenu:
+            case MWInput::A_RadialMenu:
                 MWBase::Environment::get().getWindowManager()->pushGuiMode(MWGui::GM_RadialMenu);
                 break;
-                // MERGETODO: I probably don't need this since i'm setting the ics channel
-            //case MWInput::A_CycleSpellLeft:
-            //    if (mActionManager->checkAllowedToUseItems()
-            //        && MWBase::Environment::get().getWindowManager()->isAllowed(MWGui::GW_Magic))
-            //        MWBase::Environment::get().getWindowManager()->cycleSpell(false);
-            //    break;
-            //case MWInput::A_CycleSpellRight:
-            //    if (mActionManager->checkAllowedToUseItems()
-            //        && MWBase::Environment::get().getWindowManager()->isAllowed(MWGui::GW_Magic))
-            //        MWBase::Environment::get().getWindowManager()->cycleSpell(true);
-            //    break;
-            //case MWInput::A_CycleWeaponLeft:
-            //    if (mActionManager->checkAllowedToUseItems()
-            //        && MWBase::Environment::get().getWindowManager()->isAllowed(MWGui::GW_Inventory))
-            //        MWBase::Environment::get().getWindowManager()->cycleWeapon(false);
-            //    break;
-            //case MWInput::A_CycleWeaponRight:
-            //    if (mActionManager->checkAllowedToUseItems()
-            //        && MWBase::Environment::get().getWindowManager()->isAllowed(MWGui::GW_Inventory))
-            //        MWBase::Environment::get().getWindowManager()->cycleWeapon(true);
-            //    break;
-            case A_Recenter:
+            case MWInput::A_Recenter:
                 if (!MWBase::Environment::get().getWindowManager()->isGuiMode())
                 {
                     VR::recenter();
@@ -736,9 +672,8 @@ namespace MWVR
                     pointActivation(true);
                 break;
             default:
-                auto channel = mBindingsManager->ics().getChannel(actionId);
-                if (channel)
-                    channel->setValue(1.0);
+                if (actionId < mBindingsManager->ics().getChannelCount())
+                    mBindingsManager->ics().getChannel(actionId)->setValue(1.0);
                 break;
         }
     }
@@ -752,24 +687,12 @@ namespace MWVR
                 if (mPointerLeft || mPointerRight || MWBase::Environment::get().getWindowManager()->isGuiMode())
                     pointActivation(false);
                 break;
-            case A_Recenter:
+            case MWInput::A_Recenter:
                 break;
             default:
-                auto channel = mBindingsManager->ics().getChannel(actionId);
-                if (channel)
-                    channel->setValue(0.0);
+                if (actionId < mBindingsManager->ics().getChannelCount())
+                    mBindingsManager->ics().getChannel(actionId)->setValue(0.0);
                 break;
         }
     }
-
-    void VRInputManager::HeightUpdateListener::onTrackingUpdated(
-        VR::TrackingManager& manager, VR::DisplayTime predictedDisplayTime)
-    {
-        auto tpHead = manager.locate(mHeadPath, predictedDisplayTime);
-        if (!!tpHead.status)
-        {
-            instance().updatePhysicalSneak(tpHead.pose.position.mZ);
-        }
-    }
-
 }

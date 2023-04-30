@@ -1,13 +1,30 @@
 VRPage: "OpenMW VR"
 VRPageDescription: "Additional settings related to VR"
 
-VrSettings: "VR Settings"
+SettingsVRPhysicalSneak: "Physical Sneak"
 
-physicalSneak: "Physical Sneak"
-physicalSneakDescription: |
-    If this setting is true, the character will be sneaking whenever the player ducks physically. Note that this feature requires
-    standing mode.
+physicalSneakEnabled: "Enabled"
+physicalSneakEnabledDescription: |
+    If this setting is true, the character will be sneaking whenever the player ducks physically. Note that this feature requires standing mode.
 
-physicalSneakOffset: "Toggle sneak"
+physicalSneakOffset: "Height Offset"
 physicalSneakOffsetDescription: |
     How much height in meters the player must duck before sneak becomes active, if physical sneak is enabled.
+    
+SettingsVRRealisticCombat: "Realistic Combat"
+
+realisticCombatMinVelocity: "Minimum Velocity"
+realisticCombatMinVelocityDescription: |
+    The minimum speed, in meters/second, needed to initiate combat. When your hand reaches this speed your hand movement will register as an attack at minimum power.
+
+realisticCombatMaxVelocity: "Maximum Velocity"
+realisticCombatMaxVelocityDescription: |
+    The speed, in meters/second, needed to reach full attack power. Moving your hands faster than this will still be considered an attack, but will not increase your attack power.
+    
+realisticCombatMinInterval: "Minimum Interval"
+realisticCombatMinIntervalDescription: |
+    The minimum amount of time, in seconds, that must pass after one attack has ended until a new one can be initiated.
+    
+realisticCombatMinLength: "Minimum Length"
+realisticCombatMinLengthDescription: |
+    The distance a hand must move until an attack can be registered, counting from the time your hand reaches minimum velocity. The motivation for having this be non-zero, is that if set to 0, a hit would be registered the instant your hand reaches minimum velocity, not allowing you time to accelerate to make a more powerful swing.

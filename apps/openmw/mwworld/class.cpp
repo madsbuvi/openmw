@@ -107,7 +107,8 @@ namespace MWWorld
         throw std::runtime_error("class does not have item health");
     }
 
-    bool Class::evaluateHit(const Ptr& ptr, Ptr& victim, osg::Vec3f& hitPosition) const
+    bool Class::evaluateHit(const Ptr& ptr, Ptr& victim, osg::Vec3f& hitPosition, std::optional<osg::Vec3f> origin,
+        std::optional<osg::Quat> originOrientation) const
     {
         throw std::runtime_error("class cannot hit");
     }
