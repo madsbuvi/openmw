@@ -66,6 +66,10 @@ namespace MWVR
 
         void updateCrosshairs() override;
 
+        bool shieldSheathing() const override { return false; };
+
+        bool weaponSheathing() const override { return false; };
+
     protected:
         typedef std::unordered_map<std::string, std::unique_ptr<TrackingController>, Misc::StringUtils::CiHash,
             Misc::StringUtils::CiEqual>

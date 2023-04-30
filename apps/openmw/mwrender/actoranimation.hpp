@@ -60,6 +60,8 @@ namespace MWRender
         }
         osg::ref_ptr<osg::Node> attach(
             const std::string& model, std::string_view bonename, std::string_view bonefilter, bool isLight);
+        virtual bool shieldSheathing() const;
+        virtual bool weaponSheathing() const;
 
         PartHolderPtr mScabbard;
         PartHolderPtr mHolsteredShield;
