@@ -96,23 +96,6 @@ namespace MWVR
             sWristInnerLeft = VR::stringToVRPath(sWristInnerLeftStr);
             sWristInnerRight = VR::stringToVRPath(sWristInnerRightStr);
         }
-
-        bool isTrueHUD(VR::VRPath path)
-        {
-            // TODO: This uses the RenderToSwapchainNode object, which erroneously makes calls to xrCreateSwapchain from
-            // the update thread. Disable it for now
-            return false;
-
-            // if (!Settings::Manager::getBool("use xr layer for huds", "VR"))
-            //     return false;
-
-            // return (path == Paths::sHUDTopLeft
-            //     || path == Paths::sHUDBottomLeft
-            //     || path == Paths::sHUDBottomRight
-            //     || path == Paths::sHUDTopRight
-            //     || path == Paths::sHUDMessage
-            //     );
-        }
     }
 
     // When making a circle of a given radius of equally wide planes separated by a given angle, what is the width
@@ -121,48 +104,6 @@ namespace MWVR
         const float width = std::fabs(2.f * radius * tanf(angleRadian / 2.f));
         return osg::Vec2(width, width);
     }
-
-    // class XrGUIRTT : public VR::RenderToSwapchainNode
-    //{
-    // public:
-    //     XrGUIRTT(int width, int height, osg::Vec4 clearColor, osg::ref_ptr<osg::Camera> scene)
-    //         : RenderToSwapchainNode(width, height, 1)
-    //         , mScene(scene)
-    //         , mClearColor(clearColor)
-    //     {
-
-    //    }
-
-    //    void setDefaults(osg::Camera* camera) override
-    //    {
-    //        camera->setCullingActive(false);
-
-    //        camera->setClearColor(mClearColor);
-    //        // TODO: will format matter?
-    //        // setColorBufferInternalFormat(GL_RGBA8);
-
-    //        camera->setReferenceFrame(osg::Camera::ABSOLUTE_RF);
-    //        camera->setComputeNearFarMode(osg::CullSettings::DO_NOT_COMPUTE_NEAR_FAR);
-    //        setName("GUICamera");
-    //        camera->setName("GUICamera_");
-
-    //        camera->setCullMask(MWRender::Mask_GUI);
-    //        camera->setCullMaskLeft(MWRender::Mask_GUI);
-    //        camera->setCullMaskRight(MWRender::Mask_GUI);
-
-    //        // Although this is strictly speaking a RenderToTexture node, we cannot use the Mask_RenderToTexture mask
-    //        // since it would cull this inappropriately.
-    //        camera->setNodeMask(MWRender::Mask_3DGUI);
-
-    //        camera->addChild(mScene);
-
-    //        // Do not want to waste time on shadows when generating the GUI texture
-    //        SceneUtil::ShadowManager::disableShadowsForStateSet(camera->getOrCreateStateSet());
-    //    }
-
-    //    osg::ref_ptr<osg::Camera> mScene;
-    //    osg::Vec4 mClearColor;
-    //};
 
     class GUIRTT : public SceneUtil::RTTNode
     {
@@ -332,6 +273,8 @@ namespace MWVR
         mTransform->setScale(osg::Vec3(extent_units.x(), 1.f, extent_units.y()));
         mTransform->setCullCallback(new CullVRGUILayerCallback(this));
         mTransform->setCullingActive(false);
+        if (mConfig.intersectable == Intersectable::No)
+            mTransform->setNodeMask(MWRender::Mask_Effect);
     }
 
     VRGUILayer::~VRGUILayer()
@@ -562,7 +505,8 @@ namespace MWVR
             mGeometryRoot->addChild(mTransform);
     }
 
-    static const LayerConfig createDefaultConfig(int priority, bool background = true,
+    static const LayerConfig createDefaultConfig(int priority, Intersectable intersectable = Intersectable::Yes,
+        bool background = true,
         SizingMode sizingMode = SizingMode::Auto, std::string extraLayers = "Popup")
     {
         return LayerConfig{ priority,
@@ -573,7 +517,7 @@ namespace MWVR
             osg::Vec2(1.f, 1.f), // extent (meters)
             1024, // Spatial resolution (pixels per meter)
             osg::Vec2i(1024, 1024), // Texture resolution
-            osg::Vec2(1, 1), sizingMode, "/ui/menu_quad/pose", extraLayers };
+            osg::Vec2(1, 1), sizingMode, "/ui/menu_quad/pose", extraLayers, intersectable };
     }
 
     static const float sSideBySideRadius = 1.f;
@@ -581,7 +525,7 @@ namespace MWVR
 
     static const LayerConfig createSideBySideConfig(int priority)
     {
-        LayerConfig config = createDefaultConfig(priority, true, SizingMode::Fixed, "");
+        LayerConfig config = createDefaultConfig(priority, Intersectable::Yes, true, SizingMode::Fixed, "");
         config.sideBySide = true;
         config.offset = Stereo::Position::fromMeters(0.f, sSideBySideRadius, -.25f);
         config.extent = radiusAngleWidth(sSideBySideRadius, sSideBySideAzimuthInterval);
@@ -614,10 +558,24 @@ namespace MWVR
         VRGUIManager* mManager;
     };
 
+    struct SessionListener : public VR::Session::Listener
+    {
+        SessionListener(VRGUIManager* parent)
+            : mParent(parent)
+        {
+        }
+
+        void onRecenter() override { mParent->resetStationaryPose(); }
+        void onEyeLevelReset() override { mParent->resetStationaryPoseHeight(); };
+
+        VRGUIManager* mParent;
+    };
+
     VRGUIManager::VRGUIManager(Resource::ResourceSystem* resourceSystem, osg::Group* rootNode)
         : mResourceSystem(resourceSystem)
         , mRootNode(rootNode)
         , mUiTracking(new VRGUITracking())
+        , mSessionListener(std::make_shared<SessionListener>(this))
     {
         if (!sManager)
             sManager = this;
@@ -625,6 +583,7 @@ namespace MWVR
             throw std::logic_error("Duplicated MWVR::VRGUIManager singleton");
 
         Paths::init();
+        VR::Session::instance().addListener(mSessionListener);
 
         mGeometries->setName("VR GUI Geometry Root");
         mGeometries->setCullCallback(new LayerUpdateCallback(this));
@@ -659,6 +618,7 @@ namespace MWVR
 
     VRGUIManager::~VRGUIManager(void)
     {
+        VR::Session::instance().removeListener(mSessionListener);
         sManager = nullptr;
     }
 
@@ -667,16 +627,17 @@ namespace MWVR
         clear();
 
         LayerConfig defaultConfig = createDefaultConfig(1);
-        LayerConfig loadingScreenConfig = createDefaultConfig(1, true, SizingMode::Fixed, "LoadingScreenBackground");
-        LayerConfig mainMenuConfig = createDefaultConfig(1, true, MWVR::SizingMode::Auto, "MainMenuBackground;Popup");
-        LayerConfig journalBooksConfig = createDefaultConfig(2, false, SizingMode::Fixed);
-        LayerConfig defaultWindowsConfig = createDefaultConfig(3, true);
-        LayerConfig videoPlayerConfig = createDefaultConfig(4, true, SizingMode::Fixed);
-        LayerConfig messageBoxConfig = createDefaultConfig(6, false, SizingMode::Auto);
-        LayerConfig notificationConfig = createDefaultConfig(7, false, SizingMode::Fixed);
-        LayerConfig listBoxConfig = createDefaultConfig(10, true);
-        LayerConfig consoleConfig = createDefaultConfig(2, true);
-        LayerConfig radialMenuConfig = createDefaultConfig(11, false);
+        LayerConfig loadingScreenConfig = createDefaultConfig(1, Intersectable::Yes, true, SizingMode::Fixed, "LoadingScreenBackground");
+        LayerConfig mainMenuConfig
+            = createDefaultConfig(1, Intersectable::Yes, true, MWVR::SizingMode::Auto, "MainMenuBackground;Popup");
+        LayerConfig journalBooksConfig = createDefaultConfig(2, Intersectable::Yes, false, SizingMode::Fixed);
+        LayerConfig defaultWindowsConfig = createDefaultConfig(3, Intersectable::Yes, true);
+        LayerConfig videoPlayerConfig = createDefaultConfig(4, Intersectable::Yes, true, SizingMode::Fixed);
+        LayerConfig messageBoxConfig = createDefaultConfig(6, Intersectable::Yes, false, SizingMode::Auto);
+        LayerConfig notificationConfig = createDefaultConfig(7, Intersectable::No, false, SizingMode::Fixed);
+        LayerConfig listBoxConfig = createDefaultConfig(10, Intersectable::Yes, true);
+        LayerConfig consoleConfig = createDefaultConfig(2, Intersectable::Yes, true);
+        LayerConfig radialMenuConfig = createDefaultConfig(11, Intersectable::Yes, false);
         // TODO: Track around wrist instead of being a regular menu quad?
         // radialMenuConfig.offset = osg::Vec3(0.f, 0.66f, 0.f);
         // radialMenuConfig.trackingPath = Paths::sWristTopRightStr;
@@ -744,7 +705,7 @@ namespace MWVR
             osg::Vec2(.25f, .25f), // extent (meters)
             2048, // Spatial resolution (pixels per meter)
             osg::Vec2i(1024, 1024), // Texture resolution
-            osg::Vec2(1, 1), SizingMode::Auto, Paths::sHUDKeyboardStr, "" };
+            osg::Vec2(1, 1), SizingMode::Auto, Paths::sHUDKeyboardStr, "", Intersectable::Yes };
 
         LayerConfig HUDConfig = LayerConfig{ 0,
             false, // side-by-side
@@ -754,7 +715,7 @@ namespace MWVR
             osg::Vec2(0.f, 0.5f), // center (model space)
             osg::Vec2(.033f, .033f), // extent (meters)
             1024, // resolution (pixels per meter)
-            osg::Vec2i(1024, 1024), defaultConfig.myGUIViewSize, SizingMode::Auto, hudPath, "" };
+            osg::Vec2i(1024, 1024), defaultConfig.myGUIViewSize, SizingMode::Auto, hudPath, "", Intersectable::Yes };
 
         LayerConfig tooltipConfig = LayerConfig{ 0,
             false, // side-by-side
@@ -762,7 +723,8 @@ namespace MWVR
             tooltipOffset, osg::Vec2(0.f, 0.5f), // center (model space)
             osg::Vec2(.33f, .33f), // extent (meters)
             1024, // resolution (pixels per meter)
-            osg::Vec2i(1024, 1024), defaultConfig.myGUIViewSize, SizingMode::Auto, tooltipPath, "" };
+            osg::Vec2i(1024, 1024), defaultConfig.myGUIViewSize, SizingMode::Auto, tooltipPath, "",
+            Intersectable::No };
 
         mLayerConfigs = {
             { "DefaultConfig", defaultConfig },
@@ -964,9 +926,14 @@ namespace MWVR
             removeWidget(widget);
     }
 
-    void VRGUIManager::updateTracking()
+    void VRGUIManager::resetStationaryPose()
     {
         mUiTracking->resetStationaryPose();
+    }
+
+    void VRGUIManager::resetStationaryPoseHeight()
+    {
+        mUiTracking->resetStationaryPoseHeight();
     }
 
     void VRGUIManager::updateFocus(osg::Node* focusNode, osg::Vec3f hitPoint)
@@ -1155,8 +1122,7 @@ namespace MWVR
         // The virtual keyboard must be interactive regardless of modals
         // This could be generalized with another config entry, but i don't think any other
         // widgets/layers need it so i'm hardcoding it for the VirtualKeyboard for now.
-        if (mFocusLayer && mFocusLayer->mLayerName == "VirtualKeyboard"
-            && MyGUI::InputManager::getInstance().isModalAny())
+        if (mFocusLayer && mFocusLayer->mLayerName == "VirtualKeyboard")
         {
             auto* widget = MyGUI::LayerManager::getInstance().getWidgetFromPoint((int)x, (int)y);
             setFocusWidget(widget);
@@ -1174,7 +1140,7 @@ namespace MWVR
 
     VR::TrackingPose VRGUITracking::locate(VR::VRPath path, VR::DisplayTime predictedDisplayTime)
     {
-        updateTracking(predictedDisplayTime);
+        updateTracking();
 
         if (path == Paths::sMenuQuad)
             return mStationaryPose;
@@ -1211,9 +1177,9 @@ namespace MWVR
             Paths::sWristInnerRight, Paths::sWristTopLeft, Paths::sWristTopRight };
     }
 
-    void VRGUITracking::updateTracking(VR::DisplayTime predictedDisplayTime)
+    void VRGUITracking::updateTracking()
     {
-        if (predictedDisplayTime == mLastTime)
+        if (VR::getPredictedDisplayTime()  == mLastTime)
             return;
         // if(Settings::Manager::getBool("use xr layer for huds", "VR"))
         //{
@@ -1279,10 +1245,8 @@ namespace MWVR
                     += mHUDMessagePose.pose.orientation * Stereo::Position::fromMWUnits(osg::Vec3f(0, 30, -3));
             }
 
-            if (mShouldUpdateStationaryPose)
+            if (mShouldUpdateStationaryPose || mShouldUpdateStationaryPoseHeight)
             {
-                mShouldUpdateStationaryPose = false;
-
                 if (!mHasInitialPose)
                 {
                     // Some runtimes initially report success while not actually returning a pose.
@@ -1299,14 +1263,26 @@ namespace MWVR
                 auto local = tp.pose.orientation * axis;
                 vertical.makeRotate(local, axis);
                 tp.pose.orientation = tp.pose.orientation * vertical;
-                mStationaryPose = tp;
 
-                mHUDKeyboardPose = tp;
-                mHUDKeyboardPose.pose.position
-                    += mHUDKeyboardPose.pose.orientation * Stereo::Position::fromMWUnits(osg::Vec3(0, 35, -40));
-                // Tilt the keyboard slightly for easier typing.
-                mHUDKeyboardPose.pose.orientation
-                    = osg::Quat(osg::PI_4 / 2.f, osg::Vec3(-1, 0, 0)) * mHUDKeyboardPose.pose.orientation;
+                if (mShouldUpdateStationaryPose)
+                {
+                    mStationaryPose = tp;
+                    mHUDKeyboardPose = tp;
+                    mHUDKeyboardPose.pose.position
+                        += mHUDKeyboardPose.pose.orientation * Stereo::Position::fromMWUnits(osg::Vec3(0, 35, -40));
+                    // Tilt the keyboard slightly for easier typing.
+                    mHUDKeyboardPose.pose.orientation
+                        = osg::Quat(osg::PI_4 / 2.f, osg::Vec3(-1, 0, 0)) * mHUDKeyboardPose.pose.orientation;
+                }
+                else if (mShouldUpdateStationaryPoseHeight)
+                {
+                    mStationaryPose.pose.position.mZ = tp.pose.position.mZ;
+                    mHUDKeyboardPose.pose.position.mZ = tp.pose.position.mZ
+                        + (mHUDKeyboardPose.pose.orientation * Stereo::Position::fromMWUnits(osg::Vec3(0, 35, -40))).mZ;
+                }
+
+                mShouldUpdateStationaryPose = false;
+                mShouldUpdateStationaryPoseHeight = false;
             }
         }
 
@@ -1336,12 +1312,17 @@ namespace MWVR
                 += mWristTopRightPose.pose.orientation * Stereo::Position::fromMeters(.0f, -0.200f, .066f);
         }
 
-        mLastTime = predictedDisplayTime;
+        mLastTime = VR::getPredictedDisplayTime();
     }
 
     void VRGUITracking::resetStationaryPose()
     {
         mShouldUpdateStationaryPose = true;
+    }
+
+    void VRGUITracking::resetStationaryPoseHeight() 
+    {
+        mShouldUpdateStationaryPoseHeight = true;
     }
 
 }

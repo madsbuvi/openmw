@@ -50,23 +50,24 @@ namespace VR
             mOrientation = yawQuat;
     }
 
+    void StageToWorldBinding::setEyeLevel(Stereo::Unit eyeLevel)
+    {
+        if (VR::getSeatedPlay())
+            mMovement.mZ = eyeLevel;
+        else
+            mMovement.mZ = mLastPose.pose.position.mZ;
+    }
+
     void StageToWorldBinding::consumeMovement(const Stereo::Position& movement)
     {
         mMovement.mX -= movement.mX;
         mMovement.mY -= movement.mY;
     }
 
-    void StageToWorldBinding::recenter(bool resetZ)
+    void StageToWorldBinding::recenter()
     {
         mMovement.mX = {};
         mMovement.mY = {};
-        if (resetZ)
-        {
-            if (VR::getSeatedPlay())
-                mMovement.mZ = mEyeLevel;
-            else
-                mMovement.mZ = mLastPose.pose.position.mZ;
-        }
     }
 
     void StageToWorldBinding::bindPaths(VRPath worldPath, VRPath stagePath)
@@ -96,8 +97,8 @@ namespace VR
 
     TrackingPose StageToWorldBinding::locate(VRPath path, DisplayTime predictedDisplayTime)
     {
-        if (predictedDisplayTime != mLastPose.time)
-            updateTracking(predictedDisplayTime);
+        updateTracking();
+
 
         auto it = mBindings.find(path);
         if (it == mBindings.end())
@@ -137,8 +138,11 @@ namespace VR
         return paths;
     }
 
-    void StageToWorldBinding::updateTracking(VR::DisplayTime predictedDisplayTime)
+    void StageToWorldBinding::updateTracking()
     {
+        if (VR::getPredictedDisplayTime() == mLastPose.time)
+            return;
+
         mOriginWorldPose = Stereo::Pose();
         if (mOrigin)
         {

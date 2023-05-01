@@ -1,4 +1,5 @@
 #include "vr.hpp"
+#include "viewer.hpp"
 
 namespace VR
 {
@@ -10,6 +11,8 @@ namespace VR
         bool sLeftControllerActive = false;
         bool sRightControllerActive = false;
         bool sSeatedPlay = false;
+        DisplayTime sPredictedDisplayTime = 0;
+        DisplayTime sPredictedDisplayPeriod = 0;
     }
 
     bool getVR()
@@ -47,6 +50,16 @@ namespace VR
         return !sSeatedPlay;
     }
 
+    DisplayTime getPredictedDisplayTime()
+    {
+        return sPredictedDisplayTime;
+    }
+
+    DisplayTime getPredictedDisplayPeriod()
+    {
+        return sPredictedDisplayPeriod;
+    }
+
     void setVR(bool VR)
     {
         sVRMode = VR;
@@ -72,4 +85,64 @@ namespace VR
         sSeatedPlay = seated;
     }
 
+    }
+    void setPredictedDisplayTime(DisplayTime time)
+    {
+        sPredictedDisplayTime = time;
+    }
+    void setPredictedDisplayPeriod(DisplayTime time)
+    {
+        sPredictedDisplayPeriod = time;
+    }
+
+    void recenter() 
+    {
+        if (sVRMode)
+            Session::instance().recenter();
+    }
+
+    void resetEyeLevel()
+    {
+        if (sVRMode)
+            Session::instance().resetEyeLevel();
+    }
+
+    std::map<std::string, VRPath, std::less<>> sPathIdentifiers;
+
+    VRPath newPath(std::string_view path)
+    {
+        VRPath vrPath = sPathIdentifiers.size() + 1;
+        auto res = sPathIdentifiers.emplace(path, vrPath);
+        return res.first->second;
+    }
+
+    VRPath stringToVRPath(std::string_view path)
+    {
+        // Empty path is invalid
+        if (path.empty())
+        {
+            Log(Debug::Error) << "VR::stringToVRPath: Empty path";
+            return VRPath();
+        }
+
+        // Return path immediately if it already exists
+        auto it = sPathIdentifiers.find(path);
+        if (it != sPathIdentifiers.end())
+            return it->second;
+
+        // Add new path and return it
+        return newPath(path);
+    }
+
+    std::string_view VRPathToString(VRPath path)
+    {
+        // Find the identifier in the map and return the corresponding string.
+        for (auto& e : sPathIdentifiers)
+            if (e.second == path)
+                return e.first;
+
+        // No path found, return empty string
+        Log(Debug::Warning) << "VR::VRPathToString: No such path identifier (" << path << ")";
+        return "";
+    }
 }

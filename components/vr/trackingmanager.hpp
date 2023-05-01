@@ -22,10 +22,7 @@ namespace VR
         TrackingManager();
         ~TrackingManager();
 
-        //! Angles to be used for overriding movement direction
-        // void movementAngles(float& yaw, float& pitch);
-
-        void updateTracking(const VR::Frame& frame);
+        void updateTracking();
 
         //! Bind listener to source, listener will receive tracking updates from source until unbound.
         //! \note A single listener can only receive tracking updates from one source.
@@ -33,9 +30,6 @@ namespace VR
 
         //! Unbind listener, listener will no longer receive tracking updates.
         void removeListener(TrackingListener* listener);
-
-        //! Angles to be used for overriding movement direction
-        void movementAngles(float& yaw, float& pitch);
 
         void processChangedSettings(const std::set<std::pair<std::string, std::string>>& changed);
 
@@ -49,7 +43,6 @@ namespace VR
         friend class TrackingSource;
         void registerTrackingSource(TrackingSource* source);
         void unregisterTrackingSource(TrackingSource* source);
-        void updateMovementAngles(DisplayTime predictedDisplayTime);
         void checkAvailablePathsChanged();
         void updateAvailablePaths();
 
@@ -57,12 +50,6 @@ namespace VR
         std::map<VRPath, TrackingSource*> mPathToSourceMap;
         std::set<VRPath> mAvailablePaths;
         std::list<TrackingListener*> mListeners;
-
-        bool mHandDirectedMovement = 0.f;
-        VRPath mHeadPath = VRPath();
-        VRPath mHandPath = VRPath();
-        float mMovementYaw = 0.f;
-        float mMovementPitch = 0.f;
     };
 }
 

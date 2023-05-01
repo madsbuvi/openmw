@@ -14,6 +14,7 @@
 #include <osg/TexMat>
 #include <osg/Texture2D>
 
+#include <components/vr/session.hpp>
 #include <components/vr/layer.hpp>
 #include <components/vr/trackinglistener.hpp>
 #include <components/vr/trackingpath.hpp>
@@ -49,6 +50,14 @@ namespace MWVR
         Fixed
     };
 
+    // Applies to the user pointer only. Any other intersection context
+    // will always ignore UI elements.
+    enum class Intersectable
+    {
+        No,
+        Yes
+    };
+
     /// Configuration of a VRGUILayer
     struct LayerConfig
     {
@@ -68,6 +77,7 @@ namespace MWVR
         SizingMode sizingMode; //!< How to size the layer
         std::string trackingPath; //!< The path that will be used to read tracking data
         std::string extraLayers; //!< Additional layers to draw (list separated by any non-alphabetic)
+        Intersectable intersectable;
 
         bool operator<(const LayerConfig& rhs) const { return priority < rhs.priority; }
     };
@@ -81,8 +91,9 @@ namespace MWVR
         ~VRGUITracking();
 
         std::vector<VR::VRPath> listSupportedPaths() const override;
-        void updateTracking(VR::DisplayTime predictedDisplayTime) override;
+        void updateTracking() override;
         void resetStationaryPose();
+        void resetStationaryPoseHeight();
 
     protected:
         virtual VR::TrackingPose locate(VR::VRPath path, VR::DisplayTime predictedDisplayTime) override;
@@ -101,6 +112,7 @@ namespace MWVR
         VR::TrackingPose mWristTopRightPose = VR::TrackingPose();
 
         bool mShouldUpdateStationaryPose = true;
+        bool mShouldUpdateStationaryPoseHeight = false;
         bool mHasInitialPose = false;
         bool mTimedPoseRefresh = false;
         std::chrono::steady_clock::time_point mTimedPoseRefreshTime;
@@ -199,7 +211,8 @@ namespace MWVR
         void update(osg::NodeVisitor* nv);
 
         /// Update traversal
-        void updateTracking();
+        void resetStationaryPose();
+        void resetStationaryPoseHeight();
 
         /// Gui cursor coordinates to use to simulate a mouse press/move if the player is currently pointing at a vr gui
         /// layer
@@ -242,6 +255,8 @@ namespace MWVR
         osg::ref_ptr<VRGUILayer> mFocusLayer = nullptr;
         MyGUI::Widget* mFocusWidget = nullptr;
         std::map<std::string, LayerConfig> mLayerConfigs{};
+
+        std::shared_ptr<VR::Session::Listener> mSessionListener;
     };
 }
 

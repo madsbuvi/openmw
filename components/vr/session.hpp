@@ -36,6 +36,20 @@ namespace VR
     public:
         static Session& instance();
 
+        struct Listener
+        {
+            virtual ~Listener() = default;
+
+            virtual void onRecenter(){};
+            virtual void onEyeLevelReset(){};
+            virtual void onSeatedModeChanged(){};
+            virtual void onFrameBeginUpdate([[maybe_unused]] VR::Frame& frame){};
+            virtual void onFrameBeginRender([[maybe_unused]] VR::Frame& frame){};
+            //! \note onFrameEnd() is called from the draw thread.
+            virtual void onFrameEnd([[maybe_unused]] osg::GraphicsContext* gc, [[maybe_unused]] VR::Frame& frame){};
+            virtual void onInteractionProfileActiveChanged([[maybe_unused]] VRPath topLevelPath, [[maybe_unused]] bool isActive){};
+        };
+
     public:
         Session();
         virtual ~Session();
@@ -69,7 +83,8 @@ namespace VR
 
         bool handDirectedMovement() const { return mHandDirectedMovement; };
 
-        void requestRecenter(bool recenterZ);
+        void recenter();
+        void resetEyeLevel();
 
         void instantTransition();
 
@@ -88,6 +103,9 @@ namespace VR
         void setMovementAngleOffset(osg::Vec3 offsets) { mMovementAnglesOffset = offsets; }
 
         const osg::Vec3& movementAngleOffset() const { return mMovementAnglesOffset; }
+
+        void addListener(std::shared_ptr<Listener> listener);
+        void removeListener(std::shared_ptr<Listener> listener);
 
     protected:
         void readSettings();
@@ -112,6 +130,14 @@ namespace VR
         //! This is where OpenXR implementations must call xrEndFrame()
         virtual void syncFrameEnd(VR::Frame& frame) = 0;
 
+        void onRecenter();
+        void onEyeLevelReset();
+        void onSeatedModeChanged();
+        void onFrameBeginUpdate([[maybe_unused]] VR::Frame& frame);
+        void onFrameBeginRender([[maybe_unused]] VR::Frame& frame);
+        void onFrameEnd([[maybe_unused]] osg::GraphicsContext* gc, [[maybe_unused]] VR::Frame& frame);
+        void onInteractionProfileActiveChanged(VRPath topLevelPath, bool isActive);
+
     private:
         bool mAppShouldShareDepthBuffer = false;
         bool mHandDirectedMovement = false;
@@ -127,6 +153,9 @@ namespace VR
 
         osg::Vec3 mHandsOffset;
         osg::Vec3 mMovementAnglesOffset;
+
+        std::mutex mListenersMutex;
+        std::vector<std::shared_ptr<Listener>> mListeners;
     };
 
 }

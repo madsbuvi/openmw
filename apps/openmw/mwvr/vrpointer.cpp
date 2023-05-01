@@ -203,7 +203,7 @@ namespace MWVR
             return;
         }
 
-        mDistanceToPointerTarget = Util::getPoseTarget(mPointerRay, tp.pose, true);
+        mDistanceToPointerTarget = Util::getPoseTarget(mPointerRay, tp.pose, true, false);
         // Make a ref-counted copy of the target node to ensure the object's lifetime this frame.
         mPointerTarget = mPointerRay.mHitNode;
 

@@ -68,7 +68,6 @@ namespace VR
         void configureCallbacks();
         void setupMirrorTexture();
         void processChangedSettings(const std::set<std::pair<std::string, std::string>>& changed);
-        void newFrame();
         void updateView(Stereo::View& left, Stereo::View& right);
 
         bool callbacksConfigured() { return mCallbacksConfigured; };
@@ -80,11 +79,14 @@ namespace VR
 
         void submitDepthForView(osg::State& state, osg::FrameBufferObject* fbo, Stereo::Eye view);
 
+        const VR::Frame& currentUpdateFrame();
+
     private:
         osg::ref_ptr<osg::FrameBufferObject> getXrFramebuffer(uint32_t view, osg::State* state);
         void blitXrFramebuffer(osg::State* state, int i);
         void blitMirrorTexture(osg::State* state, int i);
         void setupSwapchains();
+        void newFrame();
 
     private:
         std::mutex mMutex{};

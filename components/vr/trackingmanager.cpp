@@ -24,10 +24,6 @@ namespace VR
             sManager = this;
         else
             throw std::logic_error("Duplicated VR::TrackingManager singleton");
-
-        mHandDirectedMovement = Settings::Manager::getBool("hand directed movement", "VR");
-        mHeadPath = stringToVRPath("/stage/user/head/input/pose");
-        mHandPath = stringToVRPath("/stage/user/hand/left/input/aim/pose");
     }
 
     TrackingManager::~TrackingManager()
@@ -49,15 +45,8 @@ namespace VR
                 it++;
     }
 
-    void TrackingManager::movementAngles(float& yaw, float& pitch)
-    {
-        yaw = mMovementYaw;
-        pitch = mMovementPitch;
-    }
-
     void TrackingManager::processChangedSettings(const std::set<std::pair<std::string, std::string>>& changed)
     {
-        mHandDirectedMovement = Settings::Manager::getBool("hand directed movement", "VR");
     }
 
     TrackingPose TrackingManager::locate(VRPath path, DisplayTime predictedDisplayTime) const
@@ -103,49 +92,20 @@ namespace VR
         }
     }
 
-    void TrackingManager::updateTracking(const VR::Frame& frame)
+    void TrackingManager::updateTracking()
     {
-        if (frame.predictedDisplayTime == 0)
+        if (VR::getPredictedDisplayTime()  == 0)
+            // Can't update
             return;
 
         checkAvailablePathsChanged();
         updateMovementAngles(frame.predictedDisplayTime);
 
         for (auto* source : mSources)
-            source->updateTracking(frame.predictedDisplayTime);
+            source->updateTracking();
 
         for (auto* listener : mListeners)
             listener->onTrackingUpdated(*this, frame.predictedDisplayTime);
-    }
-
-    void TrackingManager::updateMovementAngles(DisplayTime predictedDisplayTime)
-    {
-        if (mHandDirectedMovement)
-        {
-            auto tpHead = locate(mHeadPath, predictedDisplayTime);
-            auto tpHand = locate(mHandPath, predictedDisplayTime);
-
-            if (!!tpHead.status && !!tpHand.status)
-            {
-                float headYaw = 0.f;
-                float headPitch = 0.f;
-                float headsWillRoll = 0.f;
-
-                float handYaw = 0.f;
-                float handPitch = 0.f;
-                float handRoll = 0.f;
-                Stereo::getEulerAngles(tpHead.pose.orientation, headYaw, headPitch, headsWillRoll);
-                Stereo::getEulerAngles(tpHand.pose.orientation, handYaw, handPitch, handRoll);
-
-                mMovementYaw = handYaw - headYaw;
-                mMovementPitch = handPitch - headPitch;
-            }
-        }
-        else
-        {
-            mMovementYaw = 0;
-            mMovementPitch = 0;
-        }
     }
 
     void TrackingManager::checkAvailablePathsChanged()

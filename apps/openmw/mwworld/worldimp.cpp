@@ -982,15 +982,11 @@ namespace MWWorld
         addContainerScripts(getPlayerPtr(), getPlayerPtr().getCell());
         mRendering->getCamera()->instantTransition();
 
-#ifdef USE_OPENXR
-        VR::Session::instance().requestRecenter(false);
-#endif
+        VR::recenter();
     }
 
 
-#ifdef USE_OPENXR
-        VR::Session::instance().requestRecenter(false);
-#endif
+        VR::recenter();
     void World::changeToCell(
         const ESM::RefId& cellId, const ESM::Position& position, bool adjustPlayerPos, bool changeEvent)
     {
@@ -1908,7 +1904,7 @@ namespace MWWorld
     bool World::castRenderingRay(MWPhysics::RayCastingResult& res, const osg::Vec3f& from, const osg::Vec3f& to,
         bool ignorePlayer, bool ignoreActors)
     {
-        MWRender::RayResult rayRes = mRendering->castRay(from, to, ignorePlayer, ignoreActors);
+        MWRender::RayResult rayRes = mRendering->castRay(from, to, ignorePlayer, ignoreActors, true);
         res.mHit = rayRes.mHit;
         res.mHitPos = rayRes.mHitPointWorld;
         res.mHitNormal = rayRes.mHitNormalWorld;
@@ -2154,7 +2150,7 @@ namespace MWWorld
 
         float len = 1000000.0;
 
-        MWRender::RayResult result = mRendering->castRay(orig, orig + dir * len, true, true);
+        MWRender::RayResult result = mRendering->castRay(orig, orig + dir * len, true, true, true);
         if (result.mHit)
             pos.pos[2] = result.mHitPointWorld.z();
 
@@ -3035,7 +3031,7 @@ namespace MWWorld
                 float distance = getMaxActivationDistance();
                 osg::Vec3f dest = origin + direction * distance;
 
-                MWRender::RayResult result2 = mRendering->castRay(origin, dest, true, true);
+                MWRender::RayResult result2 = mRendering->castRay(origin, dest, true, true, true);
 
                 float dist1 = std::numeric_limits<float>::max();
                 float dist2 = std::numeric_limits<float>::max();
@@ -3858,12 +3854,12 @@ namespace MWWorld
     }
 
     float World::getTargetObject(MWRender::RayResult& result, const osg::Vec3f& origin, const osg::Quat& orientation,
-        float maxDistance, bool ignorePlayer)
+        float maxDistance, bool ignorePlayer, bool ignore3DUI)
     {
         osg::Vec3f direction = orientation * osg::Vec3f(0, 1, 0);
         direction.normalize();
         osg::Vec3f end = origin + direction * maxDistance;
-        result = mRendering->castRay(origin, end, ignorePlayer);
+        result = mRendering->castRay(origin, end, ignorePlayer, false, ignore3DUI);
         if (!result.mHit)
             return 0.f;
 

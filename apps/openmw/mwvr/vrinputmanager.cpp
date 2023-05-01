@@ -433,7 +433,7 @@ namespace MWVR
         // This ensures certain widgets like Notifications will be visible.
         if (!guiMode)
         {
-            MWVR::VRGUIManager::instance().updateTracking();
+            MWVR::VRGUIManager::instance().resetStationaryPose();
         }
     }
 
@@ -532,7 +532,7 @@ namespace MWVR
                         mActionManager->screenshot();
                         break;
                     case A_Recenter:
-                        MWVR::VRGUIManager::instance().updateTracking();
+                        MWVR::VRGUIManager::instance().resetStationaryPose();
                         break;
                     case MWInput::A_Use:
                         pointActivation(true);
@@ -725,9 +725,11 @@ namespace MWVR
             //        MWBase::Environment::get().getWindowManager()->cycleWeapon(true);
             //    break;
             case A_Recenter:
-                MWVR::VRGUIManager::instance().updateTracking();
                 if (!MWBase::Environment::get().getWindowManager()->isGuiMode())
-                    VR::Session::instance().requestRecenter(true);
+                {
+                    VR::recenter();
+                    VR::resetEyeLevel();
+                }
                 break;
             case MWInput::A_Use:
                 if (mPointerLeft || mPointerRight || MWBase::Environment::get().getWindowManager()->isGuiMode())

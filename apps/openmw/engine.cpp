@@ -356,8 +356,6 @@ bool OMW::Engine::frame(float frametime)
         mLuaManager->reportStats(frameNumber, *stats);
     }
 
-    if (VR::getVR())
-        VR::Viewer::instance().newFrame();
     mViewer->eventTraversal();
     mViewer->updateTraversal();
 

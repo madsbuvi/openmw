@@ -37,7 +37,7 @@ namespace VR
 
         VRPath path() const { return mPath; }
 
-        virtual void updateTracking(VR::DisplayTime predictedDisplayTime) = 0;
+        virtual void updateTracking() = 0;
 
     protected:
         void notifyAvailablePosesChanged();
@@ -61,8 +61,7 @@ namespace VR
         void setWorldOrientation(float yaw, bool adjust);
         osg::Quat getWorldOrientation() const { return mOrientation; }
 
-        void setEyeLevel(Stereo::Unit eyeLevel) { mEyeLevel = eyeLevel; }
-        Stereo::Unit getEyeLevel() const { return mEyeLevel; }
+        void setEyeLevel(Stereo::Unit eyeLevel);
 
         //! The player's movement within the VR stage. This accumulates until the movement has been consumed by calling
         //! consumeMovement()
@@ -72,7 +71,7 @@ namespace VR
         void consumeMovement(const Stereo::Position& movement);
 
         //! Recenter tracking by consuming all movement.
-        void recenter(bool resetZ);
+        void recenter();
 
         //! World origin is the point that ties the stage and the world. (0,0,0 in the world-aligned stage is this
         //! node). If no node is set, the world-aligned stage and the world correspond 1-1.
@@ -94,7 +93,7 @@ namespace VR
         //! Predict tracked poses for the given display time.
         //! \arg predictedDisplayTime [in] the predicted display time. The pose shall be predicted for this time based
         //! on current tracking data.
-        void updateTracking(VR::DisplayTime predictedDisplayTime) override;
+        void updateTracking() override;
 
     private:
         VRPath mMovementReference;

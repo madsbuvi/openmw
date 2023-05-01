@@ -340,6 +340,13 @@ namespace VR
         }
     }
 
+    const VR::Frame& Viewer::currentUpdateFrame()
+    {
+        if (mReadyFrames.empty())
+            throw std::logic_error("VR::Viewer::currentUpdateFrame() called outside of update");
+        return mReadyFrames.back();
+    }
+
     osg::ref_ptr<osg::FrameBufferObject> Viewer::getXrFramebuffer(uint32_t view, osg::State* state)
     {
         uint64_t colorImage = mColorSwapchain[view]->image()->glImage();
@@ -518,10 +525,12 @@ namespace VR
 
     void Viewer::updateView(Stereo::View& left, Stereo::View& right)
     {
+        newFrame();
+
         std::unique_lock<std::mutex> lock(mMutex);
         auto& frame = mReadyFrames.back();
 
-        VR::TrackingManager::instance().updateTracking(frame);
+        VR::TrackingManager::instance().updateTracking();
 
         auto stageViews
             = VR::Session::instance().getPredictedViews(frame.predictedDisplayTime, VR::ReferenceSpace::Stage);

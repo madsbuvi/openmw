@@ -1797,18 +1797,9 @@ namespace MWGui
 
         MyGUI::IntSize viewSize = MyGUI::RenderManager::getInstance().getViewSize();
 
-        if (VR::getVR())
-        {
-            window->setMovable(false);
-            if (!isMaximized)
-            {
-                toggleMaximized(layout);
-                isMaximized = true;
-            }
-        }
-
-
-        const WindowRectSettingValues& rect = settings.mIsMaximized ? settings.mMaximized : settings.mRegular;
+        // -- VR Patch
+        // All windows need to be maximized in VR.
+        const WindowRectSettingValues& rect = settings.mIsMaximized || VR::getVR() ? settings.mMaximized : settings.mRegular;
 
         layout->mMainWidget->setPosition(
             MyGUI::IntPoint(static_cast<int>(rect.mX * viewSize.width), static_cast<int>(rect.mY * viewSize.height)));
@@ -1829,7 +1820,7 @@ namespace MWGui
         const WindowSettingValues& settings = it->second;
         const WindowRectSettingValues& rect = settings.mIsMaximized ? settings.mRegular : settings.mMaximized;
 
-        if (VR::getVR() && !maximized)
+        if (VR::getVR() && settings.mIsMaximized)
             return;
 
         MyGUI::IntSize viewSize = MyGUI::RenderManager::getInstance().getViewSize();
@@ -2430,8 +2421,6 @@ namespace MWGui
 
     void WindowManager::viewerTraversals()
     {
-        if (VR::getVR())
-            VR::Viewer::instance().newFrame();
         mViewer->eventTraversal();
         mViewer->updateTraversal();
         mViewer->renderingTraversals();

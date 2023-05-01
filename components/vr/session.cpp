@@ -63,14 +63,21 @@ namespace VR
     void Session::frameBeginUpdate(VR::Frame& frame)
     {
         if (frame.shouldSyncFrameLoop)
+        {
             syncFrameUpdate(
                 frame.frameNumber, frame.shouldRender, frame.predictedDisplayTime, frame.predictedDisplayPeriod);
+
+            VR::setPredictedDisplayTime(frame.predictedDisplayTime);
+            VR::setPredictedDisplayPeriod(frame.predictedDisplayPeriod);
+        }
+        onFrameBeginUpdate(frame);
     }
 
     void Session::frameBeginRender(VR::Frame& frame)
     {
         if (frame.shouldSyncFrameLoop)
             syncFrameRender(frame);
+        onFrameBeginRender(frame);
     }
 
     void Session::frameEnd(osg::GraphicsContext* gc, VR::Frame& frame)
@@ -78,6 +85,27 @@ namespace VR
         gc->swapBuffersImplementation();
         if (frame.shouldSyncFrameLoop)
             syncFrameEnd(frame);
+        onFrameEnd(gc, frame);
+    }
+
+    void Session::addListener(std::shared_ptr<Listener> listener) 
+    {
+        std::scoped_lock lock(mListenersMutex);
+
+        mListeners.push_back(listener);
+    }
+
+    void Session::removeListener(std::shared_ptr<Listener> listener)
+    {
+        std::scoped_lock lock(mListenersMutex);
+        auto it = mListeners.begin();
+        while(it != mListeners.end())
+        {
+            if (*it == listener)
+                it = mListeners.erase(it);
+            else
+                it++;
+        }
     }
 
     void Session::readSettings()
@@ -86,7 +114,8 @@ namespace VR
         if (VR::getSeatedPlay() != seatedPlay)
         {
             VR::setSeatedPlay(seatedPlay);
-            requestRecenter(true);
+            onSeatedModeChanged();
+            resetEyeLevel();
         }
 
         mHandDirectedMovement = Settings::Manager::getBool("hand directed movement", "VR");
@@ -102,7 +131,6 @@ namespace VR
         Log(Debug::Verbose) << "Read player height: " << mPlayerHeight.asMeters();
         mPlayerScale = mCharHeight / mPlayerHeight;
         Log(Debug::Verbose) << "Calculated player scale: " << mPlayerScale;
-        requestRecenter(true);
     }
 
     void Session::setCharHeight(Stereo::Unit height)
@@ -110,24 +138,42 @@ namespace VR
         Log(Debug::Verbose) << "Set char height: " << height.asMeters();
         mCharHeight = height;
         computePlayerScale();
+        resetEyeLevel();
     }
 
-    void Session::requestRecenter(bool recenterZ)
+    void Session::recenter()
     {
         if (mTrackerToWorldBinding)
         {
-            Log(Debug::Verbose) << "Recentering (recenterZ=" << recenterZ << ")";
-            mTrackerToWorldBinding->setEyeLevel(charHeight());
-            mTrackerToWorldBinding->recenter(recenterZ);
+            Log(Debug::Verbose) << "Recentering";
+            mTrackerToWorldBinding->recenter();
         }
         else
             Log(Debug::Warning) << "Recenter was requested, but session was not ready";
+
+        onRecenter();
+    }
+
+    void Session::resetEyeLevel()
+    {
+        if (mTrackerToWorldBinding)
+        {
+            Log(Debug::Verbose) << "Resetting eye level";
+            mTrackerToWorldBinding->setEyeLevel(charHeight());
+        }
+        else
+            Log(Debug::Warning) << "Recenter was requested, but session was not ready";
+
+        onEyeLevelReset();
     }
 
     void Session::instantTransition()
     {
         if (mTrackerToWorldBinding)
+        {
             mTrackerToWorldBinding->instantTransition();
+            mTrackerToWorldBinding->recenter();
+        }
         else
             Log(Debug::Warning) << "Instant transition was requested, but session was not ready";
     }
@@ -148,6 +194,8 @@ namespace VR
             mActiveInteractionProfiles.insert(topLevelPath);
         else
             mActiveInteractionProfiles.erase(topLevelPath);
+
+        onInteractionProfileActiveChanged(topLevelPath, active);
     }
 
     bool Session::getInteractionProfileActive(VRPath topLevelPath) const
@@ -161,5 +209,56 @@ namespace VR
             mSneakOffset = Stereo::Unit::fromMWUnits(-20.f);
         else
             mSneakOffset = {};
+    }
+
+
+
+    void Session::onRecenter()
+    {
+        std::scoped_lock lock(mListenersMutex);
+        for (auto& listener : mListeners)
+            listener->onRecenter();
+    }
+
+    void Session::onEyeLevelReset()
+    {
+        std::scoped_lock lock(mListenersMutex);
+        for (auto& listener : mListeners)
+            listener->onEyeLevelReset();
+    }
+
+    void Session::onSeatedModeChanged()
+    {
+        std::scoped_lock lock(mListenersMutex);
+        for (auto& listener : mListeners)
+            listener->onSeatedModeChanged();
+    }
+
+    void Session::onFrameBeginUpdate(VR::Frame& frame)
+    {
+        std::scoped_lock lock(mListenersMutex);
+        for (auto& listener : mListeners)
+            listener->onFrameBeginUpdate(frame);
+    }
+
+    void Session::onFrameBeginRender(VR::Frame& frame)
+    {
+        std::scoped_lock lock(mListenersMutex);
+        for (auto& listener : mListeners)
+            listener->onFrameBeginRender(frame);
+    }
+
+    void Session::onFrameEnd(osg::GraphicsContext* gc, VR::Frame& frame)
+    {
+        std::scoped_lock lock(mListenersMutex);
+        for (auto& listener : mListeners)
+            listener->onFrameEnd(gc, frame);
+    }
+
+    void Session::onInteractionProfileActiveChanged(VRPath topLevelPath, bool isActive)
+    {
+        std::scoped_lock lock(mListenersMutex);
+        for (auto& listener : mListeners)
+            listener->onInteractionProfileActiveChanged(topLevelPath, isActive);
     }
 }

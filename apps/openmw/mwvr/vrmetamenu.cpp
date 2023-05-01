@@ -95,7 +95,8 @@ namespace MWVR
 
     void VrMetaMenu::onRecenter()
     {
-        VR::Session::instance().requestRecenter(true);
+        VR::recenter();
+        VR::resetEyeLevel();
     }
 
     void VrMetaMenu::onPostprocessor()

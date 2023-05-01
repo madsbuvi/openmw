@@ -51,18 +51,19 @@ namespace MWVR
             auto* anim = MWBase::Environment::get().getWorld()->getAnimation(ptr);
 
             MWRender::RayResult result;
-            auto distance = getPoseTarget(result, getNodePose(anim->getNode("weapon bone")), false);
+            auto distance = getPoseTarget(result, getNodePose(anim->getNode("weapon bone")), false, true);
             return std::pair<MWWorld::Ptr, float>(result.mHitObject, distance);
         }
 
-        float getPoseTarget(MWRender::RayResult& result, const Stereo::Pose& pose, bool allowTelekinesis)
+        float getPoseTarget(
+            MWRender::RayResult& result, const Stereo::Pose& pose, bool allowTelekinesis, bool ignore3DUI)
         {
             auto wm = MWBase::Environment::get().getWindowManager();
             auto world = MWBase::Environment::get().getWorld();
 
             if (wm->isGuiMode() && wm->isConsoleMode())
-                return world->getTargetObject(
-                    result, pose.position.asMWUnits(), pose.orientation, world->getMaxActivationDistance() * 50, true);
+                return world->getTargetObject(result, pose.position.asMWUnits(), pose.orientation,
+                    world->getMaxActivationDistance() * 50, true, ignore3DUI);
             else
             {
                 float activationDistance = 0.f;
@@ -72,7 +73,7 @@ namespace MWVR
                     activationDistance = world->getMaxActivationDistance();
 
                 auto distance = world->getTargetObject(
-                    result, pose.position.asMWUnits(), pose.orientation, activationDistance, true);
+                    result, pose.position.asMWUnits(), pose.orientation, activationDistance, true, ignore3DUI);
 
                 if (!result.mHitObject.isEmpty() && !result.mHitObject.getClass().allowTelekinesis(result.mHitObject)
                     && distance > activationDistance && !MWBase::Environment::get().getWindowManager()->isGuiMode())

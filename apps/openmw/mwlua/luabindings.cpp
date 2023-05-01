@@ -33,6 +33,7 @@
 #include "postprocessingbindings.hpp"
 #include "types/types.hpp"
 #include "uibindings.hpp"
+#include "vrbindings.hpp"
 
 namespace MWLua
 {
@@ -246,6 +247,7 @@ namespace MWLua
             { "openmw.input", initInputPackage(context) },
             { "openmw.postprocessing", initPostprocessingPackage(context) },
             { "openmw.ui", initUserInterfacePackage(context) },
+            { "openmw.vr", initVRPackage(context) },
         };
     }
 

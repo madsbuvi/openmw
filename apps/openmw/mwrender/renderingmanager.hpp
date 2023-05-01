@@ -186,16 +186,16 @@ namespace MWRender
         bool screenshot360(osg::Image* image);
 
         RayResult castRay(
-            const osg::Vec3f& origin, const osg::Vec3f& dest, bool ignorePlayer, bool ignoreActors = false);
+            const osg::Vec3f& origin, const osg::Vec3f& dest, bool ignorePlayer, bool ignoreActors = false, bool ignore3DUI = true);
 
         /// Cast a ray from a node in the scene graph
-        RayResult castRay(
-            const osg::Transform* source, float maxDistance, bool ignorePlayer, bool ignoreActors = false);
+        RayResult castRay(const osg::Transform* source, float maxDistance, bool ignorePlayer, bool ignoreActors = false,
+            bool ignore3DUI = true);
 
         /// Return the object under the mouse cursor / crosshair position, given by nX and nY normalized screen
         /// coordinates, where (0,0) is the top left corner.
-        RayResult castCameraToViewportRay(
-            const float nX, const float nY, float maxDistance, bool ignorePlayer, bool ignoreActors = false);
+        RayResult castCameraToViewportRay(const float nX, const float nY, float maxDistance, bool ignorePlayer,
+            bool ignoreActors = false, bool ignore3DUI = true);
 
         /// Get the bounding box of the given object in screen coordinates as (minX, minY, maxX, maxY), with (0,0) being
         /// the top left corner.
@@ -302,7 +302,7 @@ namespace MWRender
         const bool mSkyBlending;
 
         osg::ref_ptr<osgUtil::IntersectionVisitor> getIntersectionVisitor(
-            osgUtil::Intersector* intersector, bool ignorePlayer, bool ignoreActors);
+            osgUtil::Intersector* intersector, bool ignorePlayer, bool ignoreActors, bool include3DUI);
 
         osg::ref_ptr<osgUtil::IntersectionVisitor> mIntersectionVisitor;
 

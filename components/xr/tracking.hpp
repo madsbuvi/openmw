@@ -34,7 +34,7 @@ namespace XR
         std::vector<VR::VRPath> listSupportedPaths() const override;
 
     protected:
-        void updateTracking(VR::DisplayTime predictedDisplayTime) override;
+        void updateTracking() override;
         VR::TrackingPose locate(VR::VRPath path, VR::DisplayTime predictedDisplayTime) override;
 
     private:

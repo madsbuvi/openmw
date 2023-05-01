@@ -42,23 +42,26 @@ namespace XR
         return paths;
     }
 
-    void Tracker::updateTracking(VR::DisplayTime predictedDisplayTime)
+    void Tracker::updateTracking()
     {
-        mLastUpdate = predictedDisplayTime;
+        if (VR::getPredictedDisplayTime() == mLastUpdate)
+            return;
+
+        mLastUpdate = VR::getPredictedDisplayTime();
 
         if (mTrackingActionSet)
             mTrackingActionSet->updateControls(false);
 
         for (auto& space : mSpaces)
         {
-            update(space.second.second, space.second.first, predictedDisplayTime);
+            update(space.second.second, space.second.first, VR::getPredictedDisplayTime());
         }
     }
 
     VR::TrackingPose Tracker::locate(VR::VRPath path, VR::DisplayTime predictedDisplayTime)
     {
-        if (predictedDisplayTime != mLastUpdate)
-            updateTracking(predictedDisplayTime);
+        updateTracking();
+
 
         auto it = mSpaces.find(path);
         if (it != mSpaces.end())

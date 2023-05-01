@@ -33,7 +33,7 @@ namespace MWRender
         Shader::ShaderManager::DefineMap defines;
         Stereo::shaderStereoDefines(defines);
 
-        mFallbackProgram = shaderManager.getProgram("fullscreen_tri");
+        mFallbackProgram = shaderManager.getProgram("fullscreen_tri", defines);
 
         mFallbackStateSet->setAttributeAndModes(mFallbackProgram);
         mFallbackStateSet->addUniform(new osg::Uniform("lastShader", 0));
