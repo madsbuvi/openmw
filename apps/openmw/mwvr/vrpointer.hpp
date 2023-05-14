@@ -66,7 +66,7 @@ namespace MWVR
         void activate();
 
     private:
-        void onTrackingUpdated(VR::TrackingManager& manager, VR::DisplayTime predictedDisplayTime) override;
+        void onTrackingUpdated(VR::TrackingManager& manager) override;
 
         bool tryProbePick(MWWorld::Ptr target);
 

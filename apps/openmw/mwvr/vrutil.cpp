@@ -40,7 +40,7 @@ namespace MWVR
                 : "/world/user/hand/right/input/aim/pose";
 
             auto handPath = VR::stringToVRPath(pointer);
-            auto pose = VR::TrackingManager::instance().locate(handPath, 0).pose;
+            auto pose = VR::TrackingManager::instance().locate(handPath).pose;
             auto distance = getPoseTarget(result, pose, true);
             return std::pair<MWWorld::Ptr, float>(result.mHitObject, distance);
         }

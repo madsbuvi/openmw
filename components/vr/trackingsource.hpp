@@ -1,7 +1,7 @@
 #ifndef VR_TRACKING_SOURCE_H
 #define VR_TRACKING_SOURCE_H
 
-#include <components/vr/trackingpath.hpp>
+#include <components/vr/vr.hpp>
 
 namespace VR
 {
@@ -25,7 +25,7 @@ namespace VR
         //! the VR stage.
         //!
         //! \return A structure describing a pose and the tracking status.
-        virtual TrackingPose locate(VRPath path, DisplayTime predictedDisplayTime) = 0;
+        virtual TrackingPose locate(VRPath path) = 0;
 
         //! List currently supported tracking paths.
         virtual std::vector<VRPath> listSupportedPaths() const = 0;
@@ -84,7 +84,7 @@ namespace VR
 
     protected:
         //! Fetches a pose from the source, and then aligns it with the game world if the reference is 0 (stage).
-        TrackingPose locate(VRPath path, DisplayTime predictedDisplayTime) override;
+        TrackingPose locate(VRPath path) override;
 
         //! List currently supported tracking paths.
         std::vector<VRPath> listSupportedPaths() const override;

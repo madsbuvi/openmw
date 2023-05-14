@@ -288,9 +288,9 @@ namespace MWVR
         updatePose();
     }
 
-    void VRGUILayer::onTrackingUpdated(VR::TrackingManager& manager, VR::DisplayTime predictedDisplayTime)
+    void VRGUILayer::onTrackingUpdated(VR::TrackingManager& manager)
     {
-        auto tp = manager.locate(mTrackingPath, predictedDisplayTime);
+        auto tp = manager.locate(mTrackingPath);
         if (!!tp.status)
         {
             mTrackedPose = tp.pose;
@@ -1138,7 +1138,7 @@ namespace MWVR
 
     VRGUITracking::~VRGUITracking() {}
 
-    VR::TrackingPose VRGUITracking::locate(VR::VRPath path, VR::DisplayTime predictedDisplayTime)
+    VR::TrackingPose VRGUITracking::locate(VR::VRPath path)
     {
         updateTracking();
 
@@ -1181,35 +1181,11 @@ namespace MWVR
     {
         if (VR::getPredictedDisplayTime()  == mLastTime)
             return;
-        // if(Settings::Manager::getBool("use xr layer for huds", "VR"))
-        //{
-        //     // HUDs are actual HUDS, positioned in View space, and do not need to be located.
-        //     // TODO: Init once
-        //     mHUDTopLeftPose.status = VR::TrackingStatus::Good;
-        //     mHUDTopLeftPose.pose.orientation = osg::Quat(0, 0, 0, 1);
-        //     mHUDTopLeftPose.pose.position = Stereo::Position::fromMWUnits(-12, 30, 6);
-
-        //    mHUDTopRightPose.status = VR::TrackingStatus::Good;
-        //    mHUDTopRightPose.pose.orientation = osg::Quat(0, 0, 0, 1);
-        //    mHUDTopRightPose.pose.position = Stereo::Position::fromMWUnits(12, 30, 6);
-
-        //    mHUDBottomLeftPose.status = VR::TrackingStatus::Good;
-        //    mHUDBottomLeftPose.pose.orientation = osg::Quat(0, 0, 0, 1);
-        //    mHUDBottomLeftPose.pose.position = Stereo::Position::fromMWUnits(-12, 30, -18);
-
-        //    mHUDBottomRightPose.status = VR::TrackingStatus::Good;
-        //    mHUDBottomRightPose.pose.orientation = osg::Quat(0, 0, 0, 1);
-        //    mHUDBottomRightPose.pose.position = Stereo::Position::fromMWUnits(12, 30, -18);
-
-        //    mHUDMessagePose.status = VR::TrackingStatus::Good;
-        //    mHUDMessagePose.pose.orientation = osg::Quat(0, 0, 0, 1);
-        //    mHUDMessagePose.pose.position = Stereo::Position::fromMWUnits(0, 30, -3);
-        //}
 
         VR::VRPath leftWrist = VR::stringToVRPath("/world/user/hand/left/input/aim/pose");
         VR::VRPath rightWrist = VR::stringToVRPath("/world/user/hand/right/input/aim/pose");
         VR::VRPath headPath = VR::stringToVRPath("/world/user/head/input/pose");
-        auto tp = VR::TrackingManager::instance().locate(headPath, predictedDisplayTime);
+        auto tp = VR::TrackingManager::instance().locate(headPath);
 
         if (mTimedPoseRefresh)
         {
@@ -1222,28 +1198,25 @@ namespace MWVR
 
         if (!!tp.status)
         {
-            // if (!Settings::Manager::getBool("use xr layer for huds", "VR"))
-            {
-                mHUDTopLeftPose = tp;
-                mHUDTopLeftPose.pose.position
-                    += mHUDTopLeftPose.pose.orientation * Stereo::Position::fromMWUnits(osg::Vec3f(-12, 30, 6));
+            mHUDTopLeftPose = tp;
+            mHUDTopLeftPose.pose.position
+                += mHUDTopLeftPose.pose.orientation * Stereo::Position::fromMWUnits(osg::Vec3f(-12, 30, 6));
 
-                mHUDTopRightPose = tp;
-                mHUDTopRightPose.pose.position
-                    += mHUDTopRightPose.pose.orientation * Stereo::Position::fromMWUnits(osg::Vec3f(12, 30, 6));
+            mHUDTopRightPose = tp;
+            mHUDTopRightPose.pose.position
+                += mHUDTopRightPose.pose.orientation * Stereo::Position::fromMWUnits(osg::Vec3f(12, 30, 6));
 
-                mHUDBottomLeftPose = tp;
-                mHUDBottomLeftPose.pose.position
-                    += mHUDBottomLeftPose.pose.orientation * Stereo::Position::fromMWUnits(osg::Vec3f(-12, 30, -18));
+            mHUDBottomLeftPose = tp;
+            mHUDBottomLeftPose.pose.position
+                += mHUDBottomLeftPose.pose.orientation * Stereo::Position::fromMWUnits(osg::Vec3f(-12, 30, -18));
 
-                mHUDBottomRightPose = tp;
-                mHUDBottomRightPose.pose.position
-                    += mHUDBottomRightPose.pose.orientation * Stereo::Position::fromMWUnits(osg::Vec3f(12, 30, -18));
+            mHUDBottomRightPose = tp;
+            mHUDBottomRightPose.pose.position
+                += mHUDBottomRightPose.pose.orientation * Stereo::Position::fromMWUnits(osg::Vec3f(12, 30, -18));
 
-                mHUDMessagePose = tp;
-                mHUDMessagePose.pose.position
-                    += mHUDMessagePose.pose.orientation * Stereo::Position::fromMWUnits(osg::Vec3f(0, 30, -3));
-            }
+            mHUDMessagePose = tp;
+            mHUDMessagePose.pose.position
+                += mHUDMessagePose.pose.orientation * Stereo::Position::fromMWUnits(osg::Vec3f(0, 30, -3));
 
             if (mShouldUpdateStationaryPose || mShouldUpdateStationaryPoseHeight)
             {
@@ -1286,7 +1259,7 @@ namespace MWVR
             }
         }
 
-        tp = VR::TrackingManager::instance().locate(leftWrist, predictedDisplayTime);
+        tp = VR::TrackingManager::instance().locate(leftWrist);
         if (!!tp.status)
         {
             mWristInnerLeftPose = tp;
@@ -1299,7 +1272,7 @@ namespace MWVR
                 += mWristTopLeftPose.pose.orientation * Stereo::Position::fromMeters(.0f, -0.200f, .066f);
         }
 
-        tp = VR::TrackingManager::instance().locate(rightWrist, predictedDisplayTime);
+        tp = VR::TrackingManager::instance().locate(rightWrist);
         if (!!tp.status)
         {
             mWristInnerRightPose = tp;

@@ -1,9 +1,13 @@
 #include "vr.hpp"
+#include "session.hpp"
 #include "viewer.hpp"
+#include "trackingmanager.hpp"
+
+#include <components/debug/debuglog.hpp>
+#include <components/misc/strings/algorithm.hpp>
 
 namespace VR
 {
-
     namespace
     {
         bool sVRMode = false;
@@ -50,6 +54,20 @@ namespace VR
         return !sSeatedPlay;
     }
 
+    TrackingPose getTrackedPose(VRPath path)
+    {
+        if (sVRMode)
+            return TrackingManager::instance().locate(path);
+        return TrackingPose();
+    }
+
+    Stereo::Unit getPlayerHeight()
+    {
+        if (sVRMode)
+            return Session::instance().playerHeight();
+        return Stereo::Unit();
+    }
+
     DisplayTime getPredictedDisplayTime()
     {
         return sPredictedDisplayTime;
@@ -85,6 +103,10 @@ namespace VR
         sSeatedPlay = seated;
     }
 
+    void setSneakOffsetEnabled(bool enabled) 
+    {
+        if (sVRMode)
+            Session::instance().setSneak(enabled);
     }
     void setPredictedDisplayTime(DisplayTime time)
     {

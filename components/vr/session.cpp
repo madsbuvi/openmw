@@ -3,7 +3,6 @@
 #include <components/debug/debuglog.hpp>
 #include <components/misc/constants.hpp>
 #include <components/sdlutil/sdlgraphicswindow.hpp>
-#include <components/vr/trackingpath.hpp>
 #include <components/vr/trackingsource.hpp>
 #include <components/vr/vr.hpp>
 

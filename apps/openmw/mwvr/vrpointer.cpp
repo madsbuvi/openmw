@@ -183,13 +183,13 @@ namespace MWVR
         return mCanPlaceObject;
     }
 
-    void UserPointer::onTrackingUpdated(VR::TrackingManager& manager, VR::DisplayTime predictedDisplayTime)
+    void UserPointer::onTrackingUpdated(VR::TrackingManager& manager)
     {
         mPointerTransform->setScale(osg::Vec3f(1, 1, 1));
         mPointerTransform->setPosition(osg::Vec3f(0, 0, 0));
         mPointerTransform->setAttitude(osg::Quat(0, 0, 0, 1));
 
-        auto tp = manager.locate(mSourcePath, predictedDisplayTime);
+        auto tp = manager.locate(mSourcePath);
 
         if (!tp.status)
         {

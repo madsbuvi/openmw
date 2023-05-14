@@ -12,7 +12,7 @@ namespace VR
     public:
         TrackingTransform(VRPath path);
 
-        virtual void onTrackingUpdated(TrackingManager& manager, DisplayTime predictedDisplayTime);
+        virtual void onTrackingUpdated(TrackingManager& manager);
 
         VRPath path() const { return mPath; };
 

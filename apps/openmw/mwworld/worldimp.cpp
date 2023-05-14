@@ -3866,12 +3866,7 @@ namespace MWWorld
         MWWorld::Ptr facedObject = result.mHitObject;
         if (facedObject.isEmpty() && result.mHitRefnum.hasContentFile())
         {
-            for (CellStore* cellstore : mWorldScene->getActiveCells())
-            {
-                facedObject = cellstore->searchViaRefNum(result.mHitRefnum);
-                if (!facedObject.isEmpty())
-                    break;
-            }
+            facedObject = MWBase::Environment::get().getWorldModel()->getPtr(result.mHitRefnum);
         }
         result.mHitObject = facedObject;
 
@@ -3968,9 +3963,9 @@ namespace MWWorld
     class WeaponPoseTrackingListener : VR::TrackingListener
     {
     public:
-        void onTrackingUpdated(VR::TrackingManager& manager, VR::DisplayTime predictedDisplayTime) override
+        void onTrackingUpdated(VR::TrackingManager& manager) override
         {
-            mPose = manager.locate(mPath, predictedDisplayTime);
+            mPose = manager.locate(mPath);
         }
 
         VR::TrackingPose mPose;

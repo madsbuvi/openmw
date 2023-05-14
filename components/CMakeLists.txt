@@ -456,7 +456,6 @@ if(BUILD_OPENMW_VR)
         swapchain
         trackinglistener
         trackingmanager
-        trackingpath
         trackingsource
         trackingtransform
         viewer

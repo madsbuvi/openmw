@@ -20,7 +20,7 @@
 #include <components/vr/constants.hpp>
 #include <components/vr/frame.hpp>
 #include <components/vr/swapchain.hpp>
-#include <components/vr/trackingpath.hpp>
+#include <components/vr/vr.hpp>
 
 #include <osg/Vec3>
 

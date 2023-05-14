@@ -49,11 +49,11 @@ namespace VR
     {
     }
 
-    TrackingPose TrackingManager::locate(VRPath path, DisplayTime predictedDisplayTime) const
+    TrackingPose TrackingManager::locate(VRPath path) const
     {
         auto it = mPathToSourceMap.find(path);
         if (it != mPathToSourceMap.end())
-            return it->second->locate(path, predictedDisplayTime);
+            return it->second->locate(path);
 
         TrackingPose pose = TrackingPose();
         pose.status = TrackingStatus::NotTracked;
@@ -99,13 +99,12 @@ namespace VR
             return;
 
         checkAvailablePathsChanged();
-        updateMovementAngles(frame.predictedDisplayTime);
 
         for (auto* source : mSources)
             source->updateTracking();
 
         for (auto* listener : mListeners)
-            listener->onTrackingUpdated(*this, frame.predictedDisplayTime);
+            listener->onTrackingUpdated(*this);
     }
 
     void TrackingManager::checkAvailablePathsChanged()

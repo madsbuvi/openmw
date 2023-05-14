@@ -63,8 +63,8 @@ namespace Settings
         StereoCategory mStereo{ mIndex };
         StereoViewCategory mStereoView{ mIndex };
         PostProcessingCategory mPostProcessing{ mIndex };
-        VRCategory mVr;
-        VRDebugCategory mVrDebug;
+        VRCategory mVr{ mIndex };
+        VRDebugCategory mVrDebug{ mIndex };
     };
 
     class StaticValues

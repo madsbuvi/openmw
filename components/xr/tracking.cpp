@@ -8,6 +8,7 @@
 #include <components/misc/constants.hpp>
 
 #include <components/vr/frame.hpp>
+#include <components/vr/vr.hpp>
 
 namespace XR
 {
@@ -58,10 +59,9 @@ namespace XR
         }
     }
 
-    VR::TrackingPose Tracker::locate(VR::VRPath path, VR::DisplayTime predictedDisplayTime)
+    VR::TrackingPose Tracker::locate(VR::VRPath path)
     {
         updateTracking();
-
 
         auto it = mSpaces.find(path);
         if (it != mSpaces.end())

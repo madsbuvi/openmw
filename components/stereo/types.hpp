@@ -55,6 +55,8 @@ namespace Stereo
             return *this;
         }
 
+        Unit operator-() const { return Unit(-mMWUnit); }
+
         // Any unit dividing itself results in a scalar, so return a scalar
         float operator/(Unit rhs) const { return mMWUnit / rhs.mMWUnit; }
 
@@ -131,6 +133,8 @@ namespace Stereo
             *this = fromMWUnits(rhs * asMWUnits());
             return *this;
         }
+
+        Position operator-() const { return Position(-mX, -mY, -mZ); }
 
         bool operator==(const Position& rhs) const { return mX == rhs.mX && mY == rhs.mY && mZ == rhs.mZ; }
         bool operator!=(const Position& rhs) const { return !(*this == rhs); }

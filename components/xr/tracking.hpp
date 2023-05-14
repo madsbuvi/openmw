@@ -35,7 +35,7 @@ namespace XR
 
     protected:
         void updateTracking() override;
-        VR::TrackingPose locate(VR::VRPath path, VR::DisplayTime predictedDisplayTime) override;
+        VR::TrackingPose locate(VR::VRPath path) override;
 
     private:
         std::array<Stereo::View, 2> locateViews(

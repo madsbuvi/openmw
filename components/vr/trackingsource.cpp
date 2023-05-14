@@ -95,10 +95,9 @@ namespace VR
         mInstantTransition = true;
     }
 
-    TrackingPose StageToWorldBinding::locate(VRPath path, DisplayTime predictedDisplayTime)
+    TrackingPose StageToWorldBinding::locate(VRPath path)
     {
         updateTracking();
-
 
         auto it = mBindings.find(path);
         if (it == mBindings.end())
@@ -108,7 +107,7 @@ namespace VR
             throw std::logic_error("Invalid Argument");
         }
 
-        auto stagePose = TrackingManager::instance().locate(it->second, predictedDisplayTime);
+        auto stagePose = TrackingManager::instance().locate(it->second);
 
         auto worldPose = stagePose;
         worldPose.pose.position -= mLastPose.pose.position;
@@ -163,7 +162,7 @@ namespace VR
             mInstantTransition = false;
         }
 
-        auto mtp = TrackingManager::instance().locate(mMovementReference, predictedDisplayTime);
+        auto mtp = TrackingManager::instance().locate(mMovementReference);
         if (!!mtp.status)
         {
             auto vrMovement = mtp.pose.position - mLastPose.pose.position;

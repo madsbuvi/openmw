@@ -63,9 +63,9 @@ namespace MWRender
             : mCamera(camera)
         {
         }
-        void onTrackingUpdated(VR::TrackingManager& manager, VR::DisplayTime predictedDisplayTime) override
+        void onTrackingUpdated(VR::TrackingManager& manager) override
         {
-            auto tp = manager.locate(mPath, predictedDisplayTime);
+            auto tp = manager.locate(mPath);
             if (!!tp.status)
             {
                 mCamera->setPose(tp.pose);
@@ -417,6 +417,9 @@ namespace MWRender
     void Camera::setSneakOffset(float offset)
     {
         mAnimation->setFirstPersonOffset(osg::Vec3f(0, 0, -offset));
+
+        if (VR::getVR())
+            VR::setSneakOffsetEnabled(offset != 0.f);
     }
 
     void Camera::setYaw(float angle, bool force)

@@ -39,7 +39,7 @@ namespace Settings
             makeMaxStrictSanitizerFloat(0) };
         SettingValue<float> mGyroVerticalSensitivity{ mIndex, "Input", "gyro vertical sensitivity",
             makeMaxStrictSanitizerFloat(0) };
-        SettingValue<bool> mThumbstickAutoRun{ "Input", "thumbstick auto run" };
+        SettingValue<bool> mThumbstickAutoRun{ mIndex, "Input", "thumbstick auto run" };
     };
 }
 
