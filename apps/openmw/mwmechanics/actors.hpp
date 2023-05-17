@@ -125,6 +125,9 @@ namespace MWMechanics
         void skipAnimation(const MWWorld::Ptr& ptr) const;
         bool checkAnimationPlaying(const MWWorld::Ptr& ptr, const std::string& groupName) const;
         void persistAnimationStates() const;
+        void addTextKeyHandler(const MWWorld::Ptr& ptr, MWMechanics::TextKeyHandler* textKeyHandler);
+        void removeTextKeyHandler(const MWWorld::Ptr& ptr, MWMechanics::TextKeyHandler* textKeyHandler);
+        std::vector<TextKeyHandler*> getTextKeyHandlers(const MWWorld::Ptr& ptr) const;
 
         void getObjectsInRange(const osg::Vec3f& position, float radius, std::vector<MWWorld::Ptr>& out) const;
 

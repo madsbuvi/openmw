@@ -3132,6 +3132,12 @@ namespace MWWorld
         mProjectileManager->launchMagicBolt(spellId, caster, fallbackDirection, slot);
     }
 
+    void World::launchMagicBolt(
+        const ESM::RefId& spellId, const MWWorld::Ptr& caster, const osg::Vec3f& worldPos, osg::Quat orient, int slot)
+    {
+        mProjectileManager->launchMagicBolt(spellId, caster, worldPos, orient, slot);
+    }
+
     void World::updateProjectilesCasters()
     {
         mProjectileManager->updateCasters();

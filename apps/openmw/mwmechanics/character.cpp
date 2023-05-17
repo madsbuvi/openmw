@@ -25,6 +25,7 @@
 #include <components/misc/rng.hpp>
 #include <components/misc/strings/algorithm.hpp>
 #include <components/misc/strings/conversion.hpp>
+#include <components/debug/debuglog.hpp>
 
 #include <components/settings/settings.hpp>
 
@@ -997,76 +998,89 @@ namespace MWMechanics
     {
         std::string_view evt = key->second;
 
+        std::string_view action;
+        if (evt.substr(0, groupname.size()) == groupname && evt.substr(groupname.size(), 2) == ": ")
+        {
+            action = evt.substr(groupname.size() + 2);
+        }
+
         if (evt.substr(0, 7) == "sound: ")
         {
-            MWBase::SoundManager* sndMgr = MWBase::Environment::get().getSoundManager();
-            sndMgr->playSound3D(mPtr, ESM::RefId::stringRefId(evt.substr(7)), 1.0f, 1.0f);
+            doTextKeyEffect(groupname, action, [&]() {
+                MWBase::SoundManager* sndMgr = MWBase::Environment::get().getSoundManager();
+                sndMgr->playSound3D(mPtr, ESM::RefId::stringRefId(evt.substr(7)), 1.0f, 1.0f);
+            });
             return;
         }
 
         auto& charClass = mPtr.getClass();
         if (evt.substr(0, 10) == "soundgen: ")
         {
-            std::string_view soundgen = evt.substr(10);
+            doTextKeyEffect(groupname, action, [&]() {
+                std::string_view soundgen = evt.substr(10);
 
-            // The event can optionally contain volume and pitch modifiers
-            float volume = 1.0f;
-            float pitch = 1.0f;
+                // The event can optionally contain volume and pitch modifiers
+                float volume = 1.0f;
+                float pitch = 1.0f;
 
-            if (soundgen.find(' ') != std::string::npos)
-            {
-                std::vector<std::string_view> tokens;
-                Misc::StringUtils::split(soundgen, tokens);
-                soundgen = tokens[0];
-
-                if (tokens.size() >= 2)
+                if (soundgen.find(' ') != std::string::npos)
                 {
-                    volume = Misc::StringUtils::toNumeric<float>(tokens[1], volume);
+                    std::vector<std::string_view> tokens;
+                    Misc::StringUtils::split(soundgen, tokens);
+                    soundgen = tokens[0];
+
+                    if (tokens.size() >= 2)
+                    {
+                        volume = Misc::StringUtils::toNumeric<float>(tokens[1], volume);
+                    }
+
+                    if (tokens.size() >= 3)
+                    {
+                        pitch = Misc::StringUtils::toNumeric<float>(tokens[2], pitch);
+                    }
                 }
 
-                if (tokens.size() >= 3)
+                const ESM::RefId sound = charClass.getSoundIdFromSndGen(mPtr, soundgen);
+                if (!sound.empty())
                 {
-                    pitch = Misc::StringUtils::toNumeric<float>(tokens[2], pitch);
+                    MWBase::SoundManager* sndMgr = MWBase::Environment::get().getSoundManager();
+                    if (soundgen == "left" || soundgen == "right")
+                    {
+                        sndMgr->playSound3D(
+                            mPtr, sound, volume, pitch, MWSound::Type::Foot, MWSound::PlayMode::NoPlayerLocal);
+                    }
+                    else
+                    {
+                        sndMgr->playSound3D(mPtr, sound, volume, pitch);
+                    }
                 }
-            }
-
-            const ESM::RefId sound = charClass.getSoundIdFromSndGen(mPtr, soundgen);
-            if (!sound.empty())
-            {
-                MWBase::SoundManager* sndMgr = MWBase::Environment::get().getSoundManager();
-                if (soundgen == "left" || soundgen == "right")
-                {
-                    sndMgr->playSound3D(
-                        mPtr, sound, volume, pitch, MWSound::Type::Foot, MWSound::PlayMode::NoPlayerLocal);
-                }
-                else
-                {
-                    sndMgr->playSound3D(mPtr, sound, volume, pitch);
-                }
-            }
+            });
             return;
         }
 
-        if (evt.substr(0, groupname.size()) != groupname || evt.substr(groupname.size(), 2) != ": ")
+        if (action.empty())
         {
             // Not ours, skip it
             return;
         }
 
-        std::string_view action = evt.substr(groupname.size() + 2);
         if (action == "equip attach")
         {
-            if (groupname == "shield")
-                mAnimation->showCarriedLeft(true);
-            else
-                mAnimation->showWeapons(true);
+            doTextKeyEffect(groupname, action, [&]() {
+                if (groupname == "shield")
+                    mAnimation->showCarriedLeft(true);
+                else
+                    mAnimation->showWeapons(true);
+            });
         }
         else if (action == "unequip detach")
         {
-            if (groupname == "shield")
-                mAnimation->showCarriedLeft(false);
-            else
-                mAnimation->showWeapons(false);
+            doTextKeyEffect(groupname, action, [&]() {
+                if (groupname == "shield")
+                    mAnimation->showCarriedLeft(false);
+                else
+                    mAnimation->showWeapons(false);
+            });
         }
         else if (action == "chop hit" || action == "slash hit" || action == "thrust hit" || action == "hit")
         {
@@ -1081,7 +1095,8 @@ namespace MWMechanics
                     attackType = ESM::Weapon::AT_Thrust;
             }
             else if (action == "chop hit")
-                // MERGETODO: old else was: charClass.hit(mPtr, mAttackStrength, -1); vr had added the -1. Make sure this is still equivalent
+                // MERGETODO: old else was: charClass.hit(mPtr, mAttackStrength, -1); vr had added the -1. Make sure
+                // this is still equivalent
                 attackType = ESM::Weapon::AT_Chop;
             else if (action == "slash hit")
                 attackType = ESM::Weapon::AT_Slash;
@@ -1091,7 +1106,9 @@ namespace MWMechanics
             // and processing multiple hit keys for a single attack
             if (mAttackStrength != -1.f)
             {
-                charClass.hit(mPtr, mAttackStrength, attackType, mAttackVictim, mAttackHitPos, mAttackSuccess);
+                doTextKeyEffect(groupname, action, [&, attackType]() {
+                    charClass.hit(mPtr, mAttackStrength, attackType, mAttackVictim, mAttackHitPos, mAttackSuccess);
+                });
                 mAttackStrength = -1.f;
             }
         }
@@ -1118,43 +1135,47 @@ namespace MWMechanics
             }
             if (!hasHitKey && mAttackStrength != -1.f)
             {
-                if (groupname == "attack1" || groupname == "swimattack1")
-                    charClass.hit(
-                        mPtr, mAttackStrength, ESM::Weapon::AT_Chop, mAttackVictim, mAttackHitPos, mAttackSuccess);
-                else if (groupname == "attack2" || groupname == "swimattack2")
-                    charClass.hit(
-                        mPtr, mAttackStrength, ESM::Weapon::AT_Slash, mAttackVictim, mAttackHitPos, mAttackSuccess);
-                else if (groupname == "attack3" || groupname == "swimattack3")
-                    charClass.hit(
-                        mPtr, mAttackStrength, ESM::Weapon::AT_Thrust, mAttackVictim, mAttackHitPos, mAttackSuccess);
+                doTextKeyEffect(groupname, action, [&]() {
+                    if (groupname == "attack1" || groupname == "swimattack1")
+                        charClass.hit(
+                            mPtr, mAttackStrength, ESM::Weapon::AT_Chop, mAttackVictim, mAttackHitPos, mAttackSuccess);
+                    else if (groupname == "attack2" || groupname == "swimattack2")
+                        charClass.hit(
+                            mPtr, mAttackStrength, ESM::Weapon::AT_Slash, mAttackVictim, mAttackHitPos, mAttackSuccess);
+                    else if (groupname == "attack3" || groupname == "swimattack3")
+                        charClass.hit(mPtr, mAttackStrength, ESM::Weapon::AT_Thrust, mAttackVictim, mAttackHitPos,
+                            mAttackSuccess);
+                });
                 mAttackStrength = -1.f;
             }
         }
         else if (action == "shoot attach")
-            mAnimation->attachArrow();
+            doTextKeyEffect(groupname, action, [&]() { mAnimation->attachArrow(); });
         else if (action == "shoot release")
         {
             // See notes for melee release above
             if (mAttackStrength != -1.f)
             {
-                mAnimation->releaseArrow(mAttackStrength);
+                doTextKeyEffect(groupname, action, [&]() { mAnimation->releaseArrow(mAttackStrength); });
                 mAttackStrength = -1.f;
             }
         }
         else if (action == "shoot follow attach")
-            mAnimation->attachArrow();
+            doTextKeyEffect(groupname, action, [&]() { mAnimation->attachArrow(); });
         // Make sure this key is actually for the RangeType we are casting. The flame atronach has
         // the same animation for all range types, so there are 3 "release" keys on the same time, one for each range
         // type.
         else if (groupname == "spellcast" && action == mAttackType + " release")
         {
             if (mCanCast)
-                MWBase::Environment::get().getWorld()->castSpell(mPtr, mCastingManualSpell);
+                doTextKeyEffect(groupname, action,
+                    [&]() { MWBase::Environment::get().getWorld()->castSpell(mPtr, mCastingManualSpell); });
             mCastingManualSpell = false;
             mCanCast = false;
         }
         else if (groupname == "containeropen" && action == "loot")
-            MWBase::Environment::get().getWindowManager()->pushGuiMode(MWGui::GM_Container, mPtr);
+            doTextKeyEffect(groupname, action,
+                [&]() { MWBase::Environment::get().getWindowManager()->pushGuiMode(MWGui::GM_Container, mPtr); });
     }
 
     void CharacterController::updatePtr(const MWWorld::Ptr& ptr)
@@ -2803,6 +2824,30 @@ namespace MWMechanics
     void CharacterController::setAttackingOrSpell(bool attackingOrSpell) const
     {
         mPtr.getClass().getCreatureStats(mPtr).setAttackingOrSpell(attackingOrSpell);
+    }
+
+    void CharacterController::doTextKeyEffect(
+        std::string_view groupname, std::string_view action, std::function<void()> effect)
+    {
+        bool shouldSkipEffects = false;
+        for (auto textKeyHandlers : mTextKeyHandlers)
+            shouldSkipEffects = shouldSkipEffects || textKeyHandlers->handleTextKey(groupname, action);
+        if (!shouldSkipEffects)
+            effect();
+    }
+
+    void CharacterController::addTextKeyHandler(TextKeyHandler* handler) {
+        mTextKeyHandlers.emplace_back(handler);
+    }
+
+    void CharacterController::removeTextKeyHandler(TextKeyHandler* handler) {
+        for (auto it = mTextKeyHandlers.begin(); it != mTextKeyHandlers.end();)
+        {
+            if (*it == handler)
+                it = mTextKeyHandlers.erase(it);
+            else
+                it++;
+        }
     }
 
     void CharacterController::castSpell(const ESM::RefId& spellId, bool manualSpell)

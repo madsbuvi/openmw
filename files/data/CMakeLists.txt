@@ -79,6 +79,7 @@ set(BUILTIN_DATA_FILES
     scripts/omw/mwvr/vr.lua
     scripts/omw/mwvr/vrcontrols.lua
     scripts/omw/mwvr/vrcombatmelee.lua
+    scripts/omw/mwvr/vrranged.lua
     scripts/omw/settings/player.lua
     scripts/omw/settings/global.lua
     scripts/omw/settings/common.lua

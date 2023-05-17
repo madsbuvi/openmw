@@ -27,6 +27,7 @@
 #include "../mwmechanics/weapontype.hpp"
 #include "../mwworld/esmstore.hpp"
 #include "../mwlua/object.hpp"
+#include "../mwlua/luamanagerimp.hpp"
 #include "../mwbase/world.hpp"
 #include "../mwworld/class.hpp"
 
@@ -174,6 +175,19 @@ namespace MWLua
             attacker.ptr().getClass().hit(attacker.ptr(), strength, attackType, victimPtr, hitPosition, success);
         };
 
+        auto toSpellId = [](const sol::object& spellOrId) -> ESM::RefId {
+            if (spellOrId.is<ESM::Spell>())
+                return spellOrId.as<const ESM::Spell*>()->mId;
+            else
+                return ESM::RefId::deserializeText(LuaUtil::cast<std::string_view>(spellOrId));
+        };
+
+        api["TEMPINTERFACE_launchMagicBolt"] = [context, toSpellId](const Object& caster, const sol::object& spellOrId,
+                                                   osg::Vec3 origin, const LuaUtil::TransformQ& transformQ, int slot) {
+            context.mLuaManager->addAction([ptr = caster.ptr(), id = toSpellId(spellOrId), origin, orient = transformQ.mQ, slot]() {
+                    MWBase::Environment::get().getWorld()->launchMagicBolt(id, ptr, origin, orient, slot);
+            });
+        };
         return LuaUtil::makeReadOnly(api);
     }
 

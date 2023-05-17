@@ -26,6 +26,11 @@ namespace ESM
     class ESMWriter;
 }
 
+namespace MWMechanics
+{
+    class TextKeyHandler;
+}
+
 namespace MWWorld
 {
     class Ptr;
@@ -184,6 +189,10 @@ namespace MWBase
 
         /// Save the current animation state of managed references to their RefData.
         virtual void persistAnimationStates() = 0;
+
+        /// Adds a callback for animation text keys for the specified actor
+        virtual void addTextKeyHandler(const MWWorld::Ptr& ptr, MWMechanics::TextKeyHandler* textKeyHandler) = 0;
+        virtual void removeTextKeyHandler(const MWWorld::Ptr& ptr, MWMechanics::TextKeyHandler* textKeyHandler) = 0;
 
         /// Update magic effects for an actor. Usually done automatically once per frame, but if we're currently
         /// paused we may want to do it manually (after equipping permanent enchantment)

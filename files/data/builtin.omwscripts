@@ -11,6 +11,7 @@ PLAYER: scripts/omw/playercontrols.lua
 PLAYER: scripts/omw/mwvr/vr.lua
 PLAYER: scripts/omw/mwvr/vrcontrols.lua
 PLAYER: scripts/omw/mwvr/vrcombatmelee.lua
+PLAYER: scripts/omw/mwvr/vrranged.lua
 PLAYER: scripts/omw/camera/camera.lua
 NPC,CREATURE: scripts/omw/ai.lua
 

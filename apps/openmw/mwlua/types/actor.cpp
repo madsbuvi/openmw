@@ -1,10 +1,12 @@
 #include "types.hpp"
 
 #include <components/detournavigator/agentbounds.hpp>
+#include <components/sceneutil/textkeymap.hpp>
 #include <components/lua/luastate.hpp>
 
 #include <apps/openmw/mwbase/mechanicsmanager.hpp>
 #include <apps/openmw/mwbase/windowmanager.hpp>
+#include <apps/openmw/mwmechanics/character.hpp>
 #include <apps/openmw/mwmechanics/creaturestats.hpp>
 #include <apps/openmw/mwmechanics/drawstate.hpp>
 #include <apps/openmw/mwworld/class.hpp>
@@ -96,6 +98,57 @@ namespace MWLua
             if (slot >= MWWorld::InventoryStore::Slots)
                 tryEquipToSlot(anySlot, item);
     }
+
+    class ActorTextKeyHandler : public MWMechanics::TextKeyHandler
+    {
+    public:
+        ActorTextKeyHandler(const Context& context, const MWWorld::Ptr& ptr, const LuaUtil::Callback& callback, std::string_view groupname,
+            std::string_view action)
+            : mManager(context.mLuaManager)
+            , mPtr(ptr)
+            , mCallback(callback)
+            , mGroupname(groupname)
+            , mAction(action)
+        {
+
+        }
+
+    private:
+
+        bool handleTextKey(std::string_view groupname, std::string_view action) override
+        {
+            if (!mCallback.isValid())
+            {
+                // Removing the handler immediately would not be thread safe
+                // So do it asynchronously
+                mManager->addAction(
+                    [this]() { MWBase::Environment::get().getMechanicsManager()->removeTextKeyHandler(mPtr, this);
+                });
+            }
+
+            if (mGroupname == groupname && action == mAction)
+            {
+                auto ret = mCallback.call();
+                if (ret.valid())
+                {
+                    // TODO: Is this the right way to check for true?
+                    if (ret.get_type() == sol::type::boolean)
+                        return ret.as<bool>();
+
+                    return ret.get_type() != sol::type::nil;
+                }
+            }
+            return false;
+        }
+
+        bool isValid() { return mCallback.isValid(); }
+
+        LuaManager* mManager;
+        MWWorld::Ptr mPtr;
+        LuaUtil::Callback mCallback;
+        std::string mGroupname;
+        std::string mAction;
+    };
 
     void addActorBindings(sol::table actor, const Context& context)
     {
@@ -279,6 +332,16 @@ namespace MWLua
 
         addActorStatsBindings(actor, context);
         addActorMagicBindings(actor, context);
+
+        actor["addAnimationTextKeyHandler"] = [context](const SelfObject& obj, std::string_view groupname,
+                                                  std::string_view action, const sol::table& callback) {
+            const auto& ptr = obj.ptr();
+
+            // This callback removes itself when the callback object becomes invalid
+            // TODO: Right now it's just leaking when it gets removed, make it a unique ptr or shared ptr!!
+            MWBase::Environment::get().getMechanicsManager()->addTextKeyHandler(
+                ptr, new ActorTextKeyHandler(context, ptr, LuaUtil::Callback::fromLua(callback), groupname, action));
+        };
     }
 
 }

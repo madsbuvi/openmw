@@ -2,6 +2,7 @@
 #define GAME_MWMECHANICS_CHARACTER_HPP
 
 #include <deque>
+#include <functional>
 
 #include <components/esm3/loadweap.hpp>
 
@@ -125,6 +126,14 @@ namespace MWMechanics
 
     struct WeaponInfo;
 
+    class TextKeyHandler
+    {
+    public:
+        virtual ~TextKeyHandler() = default;
+
+        virtual bool handleTextKey(std::string_view groupname, std::string_view action) = 0;
+    };
+
     class CharacterController : public MWRender::Animation::TextKeyListener
     {
         MWWorld::Ptr mPtr;
@@ -191,6 +200,8 @@ namespace MWMechanics
         bool mIsMovingBackward{ false };
         osg::Vec2f mSmoothedSpeed;
 
+        std::vector<TextKeyHandler*> mTextKeyHandlers;
+
         std::string_view getMovementBasedAttackType() const;
 
         void clearStateAnimation(std::string& anim) const;
@@ -242,6 +253,8 @@ namespace MWMechanics
         bool getAttackingOrSpell() const;
         void setAttackingOrSpell(bool attackingOrSpell) const;
 
+        void doTextKeyEffect(std::string_view groupname, std::string_view action, std::function<void()> effect);
+
     public:
         CharacterController(const MWWorld::Ptr& ptr, MWRender::Animation* anim);
         virtual ~CharacterController();
@@ -270,6 +283,10 @@ namespace MWMechanics
         bool playGroup(std::string_view groupname, int mode, int count, bool persist = false);
         void skipAnim();
         bool isAnimPlaying(std::string_view groupName) const;
+
+        void addTextKeyHandler(TextKeyHandler* handler);
+        void removeTextKeyHandler(TextKeyHandler* handler);
+        std::vector<TextKeyHandler*> getTextKeyHandlers() const { return mTextKeyHandlers; }
 
         enum KillResult
         {

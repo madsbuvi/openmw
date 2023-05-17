@@ -2065,6 +2065,28 @@ namespace MWMechanics
             actor.getCharacterController().persistAnimationState();
     }
 
+    void Actors::addTextKeyHandler(const MWWorld::Ptr& ptr, MWMechanics::TextKeyHandler* textKeyHandler)
+    {
+        const auto iter = mIndex.find(ptr.mRef);
+        if (iter != mIndex.end())
+            iter->second->getCharacterController().addTextKeyHandler(textKeyHandler);
+    }
+
+    void Actors::removeTextKeyHandler(const MWWorld::Ptr& ptr, MWMechanics::TextKeyHandler* textKeyHandler)
+    {
+        const auto iter = mIndex.find(ptr.mRef);
+        if (iter != mIndex.end())
+            iter->second->getCharacterController().removeTextKeyHandler(textKeyHandler);
+    }
+
+    std::vector<TextKeyHandler*> Actors::getTextKeyHandlers(const MWWorld::Ptr& ptr) const
+    {
+        const auto iter = mIndex.find(ptr.mRef);
+        if (iter != mIndex.end())
+            return iter->second->getCharacterController().getTextKeyHandlers();
+        return {};
+    }
+
     void Actors::getObjectsInRange(const osg::Vec3f& position, float radius, std::vector<MWWorld::Ptr>& out) const
     {
         for (const Actor& actor : mActors)

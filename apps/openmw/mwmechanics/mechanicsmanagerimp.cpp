@@ -353,8 +353,11 @@ namespace MWMechanics
 
             // HACK? The player has been changed, so a new Animation object may
             // have been made for them. Make sure they're properly updated.
+            auto tkHandlers = mActors.getTextKeyHandlers(ptr);
             mActors.removeActor(ptr, true);
             mActors.addActor(ptr, true);
+            for (auto* tkHandler : tkHandlers)
+                mActors.addTextKeyHandler(ptr, tkHandler);
         }
 
         mActors.update(duration, paused);
@@ -814,6 +817,24 @@ namespace MWMechanics
     {
         mActors.persistAnimationStates();
         mObjects.persistAnimationStates();
+    }
+
+    void MechanicsManager::addTextKeyHandler(
+        const MWWorld::Ptr& ptr, MWMechanics::TextKeyHandler* textKeyHandler)
+    {
+        if (ptr.getClass().isActor())
+        {
+            mActors.addTextKeyHandler(ptr, textKeyHandler);
+        }
+    }
+
+    void MechanicsManager::removeTextKeyHandler(
+        const MWWorld::Ptr& ptr, MWMechanics::TextKeyHandler* textKeyHandler)
+    {
+        if (ptr.getClass().isActor())
+        {
+            mActors.removeTextKeyHandler(ptr, textKeyHandler);
+        }
     }
 
     void MechanicsManager::updateMagicEffects(const MWWorld::Ptr& ptr)

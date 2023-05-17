@@ -139,6 +139,8 @@ namespace MWMechanics
         void skipAnimation(const MWWorld::Ptr& ptr) override;
         bool checkAnimationPlaying(const MWWorld::Ptr& ptr, const std::string& groupName) override;
         void persistAnimationStates() override;
+        void addTextKeyHandler(const MWWorld::Ptr& ptr, MWMechanics::TextKeyHandler* textKeyHandler) override;
+        void removeTextKeyHandler(const MWWorld::Ptr& ptr, MWMechanics::TextKeyHandler* textKeyHandler) override;
 
         /// Update magic effects for an actor. Usually done automatically once per frame, but if we're currently
         /// paused we may want to do it manually (after equipping permanent enchantment)

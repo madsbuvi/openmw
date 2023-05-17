@@ -162,6 +162,28 @@
 -- @param openmw.core#Spell spell Spell (can be nil)
 
 ---
+-- Adds a callback whenever a given textkey animation event is triggered in the attached actor.
+-- textkey's only trigger if they meet all the conditions to be triggered normally.
+-- If the callback returns true, the original effect associated with the animation key is removed.
+-- If the callback returns false or nil, the original effect is still applied.
+-- Note that the handlers must be added after the actor has been created, such as during the onUpdate engine handler
+-- @function [parent=#Actor] addAnimationTextKeyHandler
+-- @param self
+-- @param #string groupname groupname of the textkey
+-- @param #string action name of the textkey's action
+-- @param openmw.async#Callback callback callback called when the text key is triggered by the character. Takes no parameters, returns true if the original action of the character should be overriden by this callback.
+-- @usage  -- Remove ranged spells and display the text "No spells for you" instead.
+-- local function spellcastHandler()
+--     ui.showMessage('No spells for you!')
+--     return true
+-- end
+-- local haveAddedTkHandlers
+-- local function addTkHandlers()
+--    Actor.addAnimationTextKeyHandler(self, 'spellcast', 'target release', async:callback(spellcastHandler))
+--    haveAddedTkHandlers = true
+-- end 
+
+---
 -- Return the spells (@{ActorSpells}) of the given actor.
 -- @function [parent=#Actor] spells
 -- @param openmw.core#GameObject actor

@@ -289,21 +289,24 @@ namespace MWWorld
             return;
 
         osg::Quat orient;
-#ifdef USE_OPENXR
-        if (caster == MWBase::Environment::get().getWorld()->getPlayerPtr() && VR::getVR())
-        {
-            Stereo::Pose weaponPose;
-            MWBase::Environment::get().getWorld()->getWeaponPose(weaponPose);
-            pos = weaponPose.position.asMWUnits();
-            orient = weaponPose.orientation;
-        }
-        else
-#endif
-            if (caster.getClass().isActor())
+        if (caster.getClass().isActor())
             orient = osg::Quat(caster.getRefData().getPosition().rot[0], osg::Vec3f(-1, 0, 0))
                 * osg::Quat(caster.getRefData().getPosition().rot[2], osg::Vec3f(0, 0, -1));
         else
             orient.makeRotate(osg::Vec3f(0, 1, 0), osg::Vec3f(fallbackDirection));
+
+        if (!caster.getClass().isActor() && fallbackDirection.length2() <= 0)
+        {
+            Log(Debug::Warning) << "Unable to launch magic bolt (direction to target is empty)";
+            return;
+        }
+
+        launchMagicBolt(spellId, caster, pos, orient, slot);
+    }
+
+    void ProjectileManager::launchMagicBolt(
+        const ESM::RefId& spellId, const MWWorld::Ptr& caster, const osg::Vec3f& pos, osg::Quat orient, int slot)
+    {
 
         MagicBoltState state;
         state.mSpellId = spellId;
@@ -322,12 +325,6 @@ namespace MWWorld
         // Non-projectile should have been removed by getMagicBoltData
         if (state.mEffects.mList.empty())
             return;
-
-        if (!caster.getClass().isActor() && fallbackDirection.length2() <= 0)
-        {
-            Log(Debug::Warning) << "Unable to launch magic bolt (direction to target is empty)";
-            return;
-        }
 
         MWWorld::ManualRef ref(*MWBase::Environment::get().getESMStore(), state.mIdMagic.at(0));
         MWWorld::Ptr ptr = ref.getPtr();
