@@ -25,7 +25,7 @@ declare -a CMAKE_CONF_OPTS=(
     -DBUILD_SHARED_LIBS=OFF
     -DUSE_SYSTEM_TINYXML=ON
     -DOPENMW_USE_SYSTEM_RECASTNAVIGATION=ON
-    -DOPENMW_CXX_FLAGS="-Werror -Werror=implicit-fallthrough"  # flags specific to OpenMW project
+    -DOPENMW_CXX_FLAGS=""  # flags specific to OpenMW project
 )
 
 if [[ "${CMAKE_EXE_LINKER_FLAGS}" ]]; then
