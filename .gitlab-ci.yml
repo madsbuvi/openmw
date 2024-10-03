@@ -17,8 +17,7 @@ variables:
 
 .Ubuntu_Image:
   tags:
-    - docker
-    - linux
+    - saas-linux-medium-amd64
   image: ubuntu:22.04
   rules:
     - if: $CI_PIPELINE_SOURCE == "push"
@@ -64,8 +63,7 @@ variables:
 
 Coverity:
   tags:
-    - docker
-    - linux
+    - saas-linux-medium-amd64
   image: ubuntu:20.04
   stage: build
   rules:
@@ -387,7 +385,7 @@ macOS12_Xcode13:
 
 .Windows_Ninja_Base:
   tags:
-    - windows
+    - saas-windows-medium-amd64
   rules:
     - if: $CI_PIPELINE_SOURCE == "push"
   before_script:
@@ -400,7 +398,7 @@ macOS12_Xcode13:
   - choco install cmake.install --installargs 'ADD_CMAKE_TO_PATH=System' -y
   - choco install vswhere -y
   - choco install ninja -y
-  - choco install python -y
+  - choco install python -y --version=3.11
   - refreshenv
   - |
     function Make-SafeFileName {
@@ -422,8 +420,8 @@ macOS12_Xcode13:
     - $env:CCACHE_BASEDIR = Get-Location
     - $env:CCACHE_DIR = "$(Get-Location)\ccache"
     - New-Item -Type Directory -Force -Path $env:CCACHE_DIR
-    - sh CI/before_script.msvc.sh -c $config -p Win64 -v 2019 -k -V -N -b -t -C $multiview -E
-    - cd MSVC2019_64_Ninja
+    - sh CI/before_script.msvc.sh -c $config -p Win64 -v 2022 -k -V -N -b -t -C $multiview -E
+    - cd MSVC2022_64_Ninja
     - .\ActivateMSVC.ps1
     - cmake --build . --config $config
     - ccache --show-stats
@@ -432,32 +430,32 @@ macOS12_Xcode13:
     - Get-ChildItem -Recurse *.ilk | Remove-Item
     - |
       if (Get-ChildItem -Recurse *.pdb) {
-        7z a -tzip "..\..\$(Make-SafeFileName("OpenMW_MSVC2019_64_${config}_${CI_COMMIT_REF_NAME}_${CI_JOB_ID}_symbols.zip"))" '*.pdb' CI-ID.txt
+        7z a -tzip "..\..\$(Make-SafeFileName("OpenMW_MSVC2022_64_${config}_${CI_COMMIT_REF_NAME}_${CI_JOB_ID}_symbols.zip"))" '*.pdb' CI-ID.txt
         Get-ChildItem -Recurse *.pdb | Remove-Item
       }
-    - 7z a -tzip "..\..\$(Make-SafeFileName("OpenMW_MSVC2019_64_${config}_${CI_COMMIT_REF_NAME}.zip"))" '*'
+    - 7z a -tzip "..\..\$(Make-SafeFileName("OpenMW_MSVC2022_64_${config}_${CI_COMMIT_REF_NAME}.zip"))" '*'
     - if ($executables) { foreach ($exe in $executables.Split(',')) { & .\$exe } }
   after_script:
     - Copy-Item C:\ProgramData\chocolatey\logs\chocolatey.log
   cache:
-    key: ninja-v0.48.5
+    key: ninja-v0.48.6
     paths:
     - ccache
     - deps
-    - MSVC2019_64_Ninja/deps/Qt
+    - MSVC2022_64_Ninja/deps/Qt
   artifacts:
     when: always
     paths:
     - "*.zip"
     - "*.log"
-    - MSVC2019_64_Ninja/*.log
-    - MSVC2019_64_Ninja/*/*.log
-    - MSVC2019_64_Ninja/*/*/*.log
-    - MSVC2019_64_Ninja/*/*/*/*.log
-    - MSVC2019_64_Ninja/*/*/*/*/*.log
-    - MSVC2019_64_Ninja/*/*/*/*/*/*.log
-    - MSVC2019_64_Ninja/*/*/*/*/*/*/*.log
-    - MSVC2019_64_Ninja/*/*/*/*/*/*/*/*.log
+    - MSVC2022_64_Ninja/*.log
+    - MSVC2022_64_Ninja/*/*.log
+    - MSVC2022_64_Ninja/*/*/*.log
+    - MSVC2022_64_Ninja/*/*/*/*.log
+    - MSVC2022_64_Ninja/*/*/*/*/*.log
+    - MSVC2022_64_Ninja/*/*/*/*/*/*.log
+    - MSVC2022_64_Ninja/*/*/*/*/*/*/*.log
+    - MSVC2022_64_Ninja/*/*/*/*/*/*/*/*.log
   # When CCache doesn't exist (e.g. first build on a fork), build takes more than 1h, which is the default for forks.
   timeout: 2h
 
@@ -490,7 +488,7 @@ macOS12_Xcode13:
 
 .Windows_MSBuild_Base:
   tags:
-    - windows
+    - saas-windows-medium-amd64
   rules:
     - if: $CI_PIPELINE_SOURCE == "push"
   before_script:
@@ -502,7 +500,7 @@ macOS12_Xcode13:
   - choco install ccache -y
   - choco install cmake.install --installargs 'ADD_CMAKE_TO_PATH=System' -y
   - choco install vswhere -y
-  - choco install python -y
+  - choco install python -y --version=3.11
   - refreshenv
   - |
     function Make-SafeFileName {
@@ -524,8 +522,8 @@ macOS12_Xcode13:
     - $env:CCACHE_BASEDIR = Get-Location
     - $env:CCACHE_DIR = "$(Get-Location)\ccache"
     - New-Item -Type Directory -Force -Path $env:CCACHE_DIR
-    - sh CI/before_script.msvc.sh -c $config -p Win64 -v 2019 -k -V -b -t -C $multiview -E
-    - cd MSVC2019_64
+    - sh CI/before_script.msvc.sh -c $config -p Win64 -v 2022 -k -V -b -t -C $multiview -E
+    - cd MSVC2022_64
     - cmake --build . --config $config
     - ccache --show-stats
     - cd $config
@@ -533,32 +531,32 @@ macOS12_Xcode13:
     - Get-ChildItem -Recurse *.ilk | Remove-Item
     - |
       if (Get-ChildItem -Recurse *.pdb) {
-        7z a -tzip "..\..\$(Make-SafeFileName("OpenMW_MSVC2019_64_${config}_${CI_COMMIT_REF_NAME}_${CI_JOB_ID}_symbols.zip"))" '*.pdb' CI-ID.txt
+        7z a -tzip "..\..\$(Make-SafeFileName("OpenMW_MSVC2022_64_${config}_${CI_COMMIT_REF_NAME}_${CI_JOB_ID}_symbols.zip"))" '*.pdb' CI-ID.txt
         Get-ChildItem -Recurse *.pdb | Remove-Item
       }
-    - 7z a -tzip "..\..\$(Make-SafeFileName("OpenMW_MSVC2019_64_${config}_${CI_COMMIT_REF_NAME}.zip"))" '*'
+    - 7z a -tzip "..\..\$(Make-SafeFileName("OpenMW_MSVC2022_64_${config}_${CI_COMMIT_REF_NAME}.zip"))" '*'
     - if ($executables) { foreach ($exe in $executables.Split(',')) { & .\$exe } }
   after_script:
     - Copy-Item C:\ProgramData\chocolatey\logs\chocolatey.log
   cache:
-    key: msbuild-v0.48.5
+    key: msbuild-v0.48.6
     paths:
     - ccache
     - deps
-    - MSVC2019_64/deps/Qt
+    - MSVC2022_64/deps/Qt
   artifacts:
     when: always
     paths:
     - "*.zip"
     - "*.log"
-    - MSVC2019_64/*.log
-    - MSVC2019_64/*/*.log
-    - MSVC2019_64/*/*/*.log
-    - MSVC2019_64/*/*/*/*.log
-    - MSVC2019_64/*/*/*/*/*.log
-    - MSVC2019_64/*/*/*/*/*/*.log
-    - MSVC2019_64/*/*/*/*/*/*/*.log
-    - MSVC2019_64/*/*/*/*/*/*/*/*.log
+    - MSVC2022_64/*.log
+    - MSVC2022_64/*/*.log
+    - MSVC2022_64/*/*/*.log
+    - MSVC2022_64/*/*/*/*.log
+    - MSVC2022_64/*/*/*/*/*.log
+    - MSVC2022_64/*/*/*/*/*/*.log
+    - MSVC2022_64/*/*/*/*/*/*/*.log
+    - MSVC2022_64/*/*/*/*/*/*/*/*.log
   # When CCache doesn't exist (e.g. first build on a fork), build takes more than 1h, which is the default for forks.
   timeout: 2h
 
@@ -594,9 +592,9 @@ Windows_MSBuild_RelWithDebInfo:
     - if: $CI_PIPELINE_SOURCE == "schedule"
 
 
-Ubuntu_AndroidNDK_arm64-v8a:
+.Ubuntu_AndroidNDK_arm64-v8a:
   tags:
-    - linux
+    - saas-linux-medium-amd64
   image: psi29a/android-ndk:focal-ndk22
   rules:
     - if: $CI_PIPELINE_SOURCE == "push"
