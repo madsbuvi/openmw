@@ -45,3 +45,13 @@ vec3 mw_sampleSkyColor(vec2 uv)
     return texture2DArray(sky, vec3((uv), gl_ViewID_OVR)).xyz;
 }
 #endif
+
+
+#if @softParticles
+uniform sampler2DArray opaqueDepthTex;
+
+vec4 mw_sampleOpaqueDepthTex(vec2 uv)
+{
+    return texture2DArray(opaqueDepthTex, vec3((uv), gl_ViewID_OVR));
+}
+#endif

@@ -17,4 +17,8 @@ vec4 mw_samplerLastShader(vec2 uv);
 vec3 mw_sampleSkyColor(vec2 uv);
 #endif
 
+#if @softParticles
+vec4 mw_sampleOpaqueDepthTex(vec2 uv);
+#endif
+
 #endif  // OPENMW_FRAGMENT_H_GLSL

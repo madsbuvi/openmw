@@ -1,5 +1,4 @@
 uniform float near;
-uniform sampler2D opaqueDepthTex;
 uniform float particleSize;
 uniform bool particleFade;
 
@@ -20,7 +19,7 @@ float calcSoftParticleFade(in vec3 viewDir, in vec3 viewNormal, in vec3 viewPos)
 
     vec2 screenCoords = gl_FragCoord.xy / screenRes;
 
-    float depth = texture2D(opaqueDepthTex, screenCoords).x;
+    float depth = mw_sampleOpaqueDepthTex(screenCoords).x;
 
     float sceneDepth = viewDepth(depth);
     float particleDepth = passViewPos.z;

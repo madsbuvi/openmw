@@ -40,3 +40,12 @@ vec3 mw_sampleSkyColor(vec2 uv)
     return texture2D(sky, uv).xyz;
 }
 #endif
+
+#if @softParticles
+uniform sampler2D opaqueDepthTex;
+
+vec4 mw_sampleOpaqueDepthTex(vec2 uv)
+{
+    return texture2D(opaqueDepthTex, uv);
+}
+#endif
