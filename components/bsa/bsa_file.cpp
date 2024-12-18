@@ -25,6 +25,7 @@
 
 #include <components/files/constrainedfilestream.hpp>
 
+#include <algorithm>
 #include <cassert>
 
 #include <boost/filesystem/path.hpp>
