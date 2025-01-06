@@ -6,6 +6,7 @@
 #include <osg/ImageUtils>
 #include <osg/ShapeDrawable>
 #include <osg/Texture2D>
+#include <osg/Texture2DArray>
 #include <osg/TextureCubeMap>
 
 #include <components/misc/callbackmanager.hpp>
@@ -108,7 +109,20 @@ namespace MWRender
                     fbo = postProcessor->getFbo(PostProcessor::FBO_Primary, frameId);
 
                 if (fbo)
+                {
+                    if (Stereo::getMultiview())
+                    {
+                        auto tex = fbo->getAttachment(osg::FrameBufferObject::BufferComponent::COLOR_BUFFER0).getTexture();
+                        auto tex2dArray = dynamic_cast<const osg::Texture2DArray*>(tex);
+                        if (tex2dArray)
+                        {
+                            fbo = new osg::FrameBufferObject;
+                            fbo->setAttachment(osg::FrameBufferObject::BufferComponent::COLOR_BUFFER0,
+                                osg::FrameBufferAttachment(const_cast<osg::Texture2DArray*>(tex2dArray), 0));
+                        }
+                    }
                     fbo->apply(*renderInfo.getState(), osg::FrameBufferObject::READ_FRAMEBUFFER);
+                }
             }
 
             mImage->readPixels(leftPadding, topPadding, width, height, GL_RGB, GL_UNSIGNED_BYTE);
