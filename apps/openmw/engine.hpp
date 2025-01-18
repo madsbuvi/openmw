@@ -286,7 +286,11 @@ namespace OMW
         int mGlMaxTextureImageUnits;
 //## VR_PATCH BEGIN
     public:
-        void configureVR(osg::GraphicsContext* gc);
+        void configureVRGraphics(osg::GraphicsContext* gc);
+        void configureVRPreScene(const std::filesystem::path& userFile, bool userFileExists,
+            const std::filesystem::path& userControllerBindingsFile,
+            const std::filesystem::path& controllerBindingsFile);
+        void configureVRScene();
 
     private:
         std::unique_ptr<Misc::CallbackManager> mCallbackManager;
