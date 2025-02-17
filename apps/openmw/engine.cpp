@@ -409,7 +409,6 @@ OMW::Engine::Engine(Files::ConfigurationManager& configurationManager)
     , mCfgMgr(configurationManager)
     , mGlMaxTextureImageUnits(0)
     // ## VR_PATCH BEGIN
-    , mVrTrackingManager(nullptr)
     , mVrGUIManager(nullptr)
     , mXrInstance(nullptr)
 // ## VR_PATCH END
@@ -459,7 +458,6 @@ OMW::Engine::~Engine()
     mVrGUIManager = nullptr;
     mXrSession = nullptr;
     mXrInstance = nullptr;
-    mVrTrackingManager = nullptr;
     // ## VR_PATCH END
 
     mResourceSystem.reset();
@@ -1216,7 +1214,6 @@ void OMW::Engine::configureVRGraphics(osg::GraphicsContext* gc)
     // Interaction profiles need to be configured before XR::Instance, to enable all relevant extensions
     configureVRInputProfiles();
 
-    mVrTrackingManager = std::make_unique<VR::TrackingManager>();
     mXrInstance = std::make_unique<XR::Instance>(gc);
     mXrSession = mXrInstance->createSession();
     if (mXrSession->appShouldShareDepthInfo())
@@ -1267,7 +1264,6 @@ void OMW::Engine::configureVRPreScene(const std::filesystem::path& userFile, boo
     mViewer->getCamera()->setCullMask(cullMask);
     mViewer->getCamera()->setCullMaskLeft(cullMask);
     mViewer->getCamera()->setCullMaskRight(cullMask);
-    mVrGUIManager = std::make_unique<MWVR::VRGUIManager>(mResourceSystem.get(), mViewer->getSceneData()->asGroup());
 
     const std::string xrinputuserdefault = mCfgMgr.getUserConfigPath().string() + "/xrcontrollersuggestions.xml";
     const std::string xrinputlocaldefault = mCfgMgr.getLocalPath().string() + "/xrcontrollersuggestions.xml";
@@ -1298,6 +1294,7 @@ void OMW::Engine::configureVRPreScene(const std::filesystem::path& userFile, boo
     mInputManager = std::make_unique<MWVR::VRInputManager>(mWindow, mViewer, mScreenCaptureHandler, userFile,
         userFileExists, userControllerBindingsFile, controllerBindingsFile, mGrab, xrControllerSuggestions,
         defaultXrControllerSuggestions);
+    mVrGUIManager = std::make_unique<MWVR::VRGUIManager>(mResourceSystem.get(), mViewer->getSceneData()->asGroup());
 
     // Before the RenderingManager and associated infrastructure is created, we need to render directly into the stereo framebuffer
     mStereoManager->setShouldAttachMultiviewFramebufferToMainCamera(true);
