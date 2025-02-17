@@ -543,6 +543,7 @@ if(BUILD_OPENMW_VR)
         instance
         platform
         session
+        space
         swapchain
         tracking
         typeconversion
