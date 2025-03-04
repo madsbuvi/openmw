@@ -2504,6 +2504,8 @@ namespace MWGui
     {
         mViewer->eventTraversal();
         mViewer->updateTraversal();
+        if (VR::getVR())
+            VR::Session::instance().updateSpaces();
         mViewer->renderingTraversals();
     }
 
@@ -2556,7 +2558,10 @@ namespace MWGui
 
     bool WindowManager::isWindowVisible(std::string_view windowId) const
     {
-        return mLuaIdToWindow.at(windowId)->isVisible();
+        auto it = mLuaIdToWindow.find(windowId);
+        if (it == mLuaIdToWindow.end())
+            throw std::logic_error("Invalid window name: " + std::string(windowId));
+        return it->second->isVisible();
     }
 
     std::vector<std::string_view> WindowManager::getAllWindowIds() const
