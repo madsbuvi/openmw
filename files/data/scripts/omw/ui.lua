@@ -155,6 +155,13 @@ local function onUiModeChangedEvent(data)
     end
 end
 
+local function isWindowVisible(windowName)
+    if replacedWindows[windowName] then
+        return replacedWindows[windowName].visible
+    end
+    return ui._isWindowVisible(windowName)
+end
+
 return {
     interfaceName = 'UI',
     ---
@@ -244,7 +251,7 @@ return {
         -- @function [parent=#UI] isWindowVisible
         -- @param #string windowName
         -- @return #boolean
-        isWindowVisible = ui._isWindowVisible,
+        isWindowVisible = isWindowVisible,
 
         -- TODO
         -- registerHudElement = function(name, showFn, hideFn) end,
