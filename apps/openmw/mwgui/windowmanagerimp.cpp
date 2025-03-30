@@ -2164,6 +2164,10 @@ namespace MWGui
 
     void WindowManager::pinWindow(GuiWindow window)
     {
+        if (VR::getVR())
+            // Pinning in VR will need some implementation work
+            return;
+
         switch (window)
         {
             case GW_Inventory:
