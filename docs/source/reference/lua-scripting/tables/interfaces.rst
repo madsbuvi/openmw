@@ -46,3 +46,12 @@
   * - :ref:`Crimes <Interface Crimes>`
     - by global scripts
     - Commit crimes.
+  * - :ref:`vrspaces <Interface vrspaces>`
+    - by player scripts
+    - Read VR tracking data
+  * - :ref:`vrui <Interface vrui>`
+    - by player scripts
+    - Manipulate VR GUI layers
+  * - :ref:`vrinputs <Interface vrinputs>`
+    - by player and menu scripts
+    - VR inputs (Under construction)

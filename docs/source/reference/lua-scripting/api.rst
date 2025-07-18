@@ -46,6 +46,9 @@ Lua API reference
     interface_skill_progression
     interface_ui
     interface_crimes
+    interface_vrinputs
+    interface_vrspaces
+    interface_vrui
     iterables
 
 
