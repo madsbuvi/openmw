@@ -29,6 +29,7 @@ Lua API reference
     openmw_ui
     openmw_util
     openmw_vfs
+    openmw_vr
     openmw_world
     openmw_aux_calendar
     openmw_aux_time
