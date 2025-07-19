@@ -69,7 +69,9 @@ jobs:
 
     - name: Extract archived prebuilt vcpkg packages
       working-directory: ${{ github.workspace }}/deps
-      run: 7z x -y -ovcpkg-x64-${{ inputs.image }}-${{ inputs.vcpkg-deps-tag }} $env:archive
+      run: |
+        echo "archive: $env:archive"
+        7z x -y -ovcpkg-x64-${{ inputs.image }}-${{ inputs.vcpkg-deps-tag }} $env:archive
 
     - name: Cache Qt
       id: qt-cache
