@@ -170,7 +170,7 @@ namespace SceneUtil
         void configureLayout(const LightBuffer* other)
         {
             mOffsets = other->mOffsets;
-            int size = other->mData->size();
+            int size = static_cast<int>(other->mData->size());
 
             configureLayout(mOffsets, size);
         }
@@ -194,7 +194,7 @@ namespace SceneUtil
                 : mStride((offsetAttenuationRadius + sizeof(GLfloat) * osg::Vec4::num_components + stride) / 4)
             {
                 constexpr auto sizeofFloat = sizeof(GLfloat);
-                const auto diffuseOffset = offsetColors / sizeofFloat;
+                const auto diffuseOffset = static_cast<int>(offsetColors / sizeofFloat);
 
                 mValues[Diffuse] = diffuseOffset;
                 mValues[Ambient] = diffuseOffset + 1;
@@ -312,11 +312,11 @@ namespace SceneUtil
 
         META_StateAttribute(SceneUtil, DisableLight, osg::StateAttribute::LIGHT)
 
-        unsigned int getMember() const override { return mIndex; }
+        unsigned int getMember() const override { return static_cast<unsigned int>(mIndex); }
 
         bool getModeUsage(ModeUsage& usage) const override
         {
-            usage.usesMode(GL_LIGHT0 + mIndex);
+            usage.usesMode(static_cast<GLMode>(GL_LIGHT0 + mIndex));
             return true;
         }
 
@@ -327,7 +327,7 @@ namespace SceneUtil
 
         void apply(osg::State& state) const override
         {
-            int lightNum = GL_LIGHT0 + mIndex;
+            GLenum lightNum = static_cast<GLenum>(GL_LIGHT0 + mIndex);
             glLightfv(lightNum, GL_AMBIENT, mNullptr.ptr());
             glLightfv(lightNum, GL_DIFFUSE, mNullptr.ptr());
             glLightfv(lightNum, GL_SPECULAR, mNullptr.ptr());
@@ -362,12 +362,12 @@ namespace SceneUtil
         {
         }
 
-        unsigned int getMember() const override { return mIndex; }
+        unsigned int getMember() const override { return static_cast<unsigned int>(mIndex); }
 
         bool getModeUsage(ModeUsage& usage) const override
         {
             for (size_t i = 0; i < mLights.size(); ++i)
-                usage.usesMode(GL_LIGHT0 + mIndex + i);
+                usage.usesMode(static_cast<GLMode>(GL_LIGHT0 + mIndex + i));
             return true;
         }
 
@@ -426,7 +426,7 @@ namespace SceneUtil
     {
         LightManager* mLightManager;
 
-        virtual ~StateSetGenerator() {}
+        virtual ~StateSetGenerator() = default;
 
         virtual osg::ref_ptr<osg::StateSet> generate(const LightManager::LightList& lightList, const osgUtil::CullVisitor* cv) = 0;
 
@@ -457,7 +457,8 @@ namespace SceneUtil
                 new FFPLightStateAttribute(mLightManager->getStartLight(), std::move(lights)), osg::StateAttribute::ON);
 
             for (size_t i = 0; i < lightList.size(); ++i)
-                stateset->setMode(GL_LIGHT0 + mLightManager->getStartLight() + i, osg::StateAttribute::ON);
+                stateset->setMode(
+                    GL_LIGHT0 + mLightManager->getStartLight() + static_cast<int>(i), osg::StateAttribute::ON);
 
             // need to push some dummy attributes to ensure proper state tracking
             // lights need to reset to their default when the StateSet is popped
@@ -542,7 +543,7 @@ namespace SceneUtil
                 configureAttenuation(lightMat, light->getConstantAttenuation(), light->getLinearAttenuation(),
                     light->getQuadraticAttenuation(), lightList[i]->mLightSource->getRadius());
 
-                data->setElement(i + 1, lightMat);
+                data->setElement(static_cast<unsigned int>(i + 1), lightMat);
             }
 
             stateset->addUniform(data);
@@ -798,7 +799,8 @@ namespace SceneUtil
         int stride = -1;
 
         ext->glGetActiveUniformBlockiv(handle, 0, GL_UNIFORM_BLOCK_DATA_SIZE, &totalBlockSize);
-        ext->glGetActiveUniformsiv(handle, index.size(), index.data(), GL_UNIFORM_ARRAY_STRIDE, &stride);
+        ext->glGetActiveUniformsiv(
+            handle, static_cast<GLsizei>(index.size()), index.data(), GL_UNIFORM_ARRAY_STRIDE, &stride);
 
         std::array<const char*, 3> names = {
             "LightBuffer[0].packedColors",
@@ -808,8 +810,9 @@ namespace SceneUtil
         std::vector<unsigned int> indices(names.size());
         std::vector<int> offsets(names.size());
 
-        ext->glGetUniformIndices(handle, names.size(), names.data(), indices.data());
-        ext->glGetActiveUniformsiv(handle, indices.size(), indices.data(), GL_UNIFORM_OFFSET, offsets.data());
+        ext->glGetUniformIndices(handle, static_cast<GLsizei>(names.size()), names.data(), indices.data());
+        ext->glGetActiveUniformsiv(
+            handle, static_cast<GLsizei>(indices.size()), indices.data(), GL_UNIFORM_OFFSET, offsets.data());
 
         mTemplate->configureLayout(offsets[0], offsets[1], offsets[2], totalBlockSize, stride);
     }
@@ -1085,7 +1088,7 @@ namespace SceneUtil
         LightSourceTransform l;
         l.mLightSource = lightSource;
         l.mWorldMatrix = worldMat;
-        osg::Vec3f pos = osg::Vec3f(worldMat.getTrans().x(), worldMat.getTrans().y(), worldMat.getTrans().z());
+        osg::Vec3f pos = worldMat.getTrans();
         lightSource->getLight(frameNum)->setPosition(osg::Vec4f(pos, 1.f));
 
         mLights.push_back(l);
@@ -1132,7 +1135,7 @@ namespace SceneUtil
                 if (getLightIndexMap(cv).find(id) != getLightIndexMap(cv).end())
                     continue;
 
-                int index = getLightIndexMap(cv).size() + 1;
+                int index = static_cast<int>(getLightIndexMap(cv).size()) + 1;
                 updateGPUPointLight(index, lightList[i]->mLightSource, cv, frameNum, viewMatrix);
                 getLightIndexMap(cv).emplace(id, index);
             }
@@ -1329,7 +1332,7 @@ namespace SceneUtil
             const osg::Transform* transform = node->asTransform();
             if (transform)
             {
-                for (size_t i = 0; i < transform->getNumChildren(); ++i)
+                for (unsigned int i = 0; i < transform->getNumChildren(); ++i)
                     nodeBound.expandBy(transform->getChild(i)->getBound());
             }
             else

@@ -78,14 +78,13 @@ namespace Stereo
         //! @Param enableMultiview whether or not to make use of the GL_OVR_Multiview extension, if supported.
         //! @Param near defines distance to near camera clipping plane from view point.
         //! @Param far defines distance to far camera clipping plane from view point.
-        //! @Param number of samples to use in the multiview framebuffer (if relevant).
-        explicit Manager(osgViewer::Viewer* viewer, bool enableStereo, double near, double far, int samples);
+        explicit Manager(osgViewer::Viewer* viewer, bool enableStereo, float near, float far);
         ~Manager();
 
         //! Called during update traversal
         void update();
 
-        void updateSettings(double near, double far)
+        void updateSettings(float near, float far)
         {
             mNear = near;
             mFar = far;
@@ -152,8 +151,8 @@ namespace Stereo
 //## VR_PATCH END
         bool mEyeResolutionOverriden;
         osg::Vec2i mEyeResolutionOverride;
-        double mNear;
-        double mFar;
+        float mNear;
+        float mFar;
         int mSamples = 0;
 
         std::array<View, 2> mView;

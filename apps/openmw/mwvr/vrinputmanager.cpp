@@ -247,6 +247,7 @@ namespace MWVR
     {
 
         sInputManager = this;
+        mMouseManager->setVROwnsCursor(true);
     }
 
     VRInputManager::~VRInputManager() {}
@@ -293,7 +294,7 @@ namespace MWVR
                     arg.y = mScrollSpeed > 0 ? 1 : -1;
                     arg.direction = SDL_MOUSEWHEEL_NORMAL;
 
-                    mMouseManager->injectMouseMove(0.f, 0.f, std::floor(mScrollPoints), true);
+                    mMouseManager->injectMouseWheel(static_cast<int>(std::floor(mScrollPoints)));
                     mMouseManager->mouseWheelMoved(arg);
                     mScrollPoints -= std::floor(mScrollPoints);
                 }

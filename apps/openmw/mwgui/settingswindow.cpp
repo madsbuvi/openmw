@@ -251,7 +251,7 @@ namespace MWGui
         : WindowBase(VR::getVR() ? "openmw_settings_window_vr.layout" : "openmw_settings_window.layout")
 //## VR_PATCH END
         , mKeyboardMode(true)
-        , mCurrentPage(-1)
+        , mCurrentPage(static_cast<size_t>(-1))
         , mCfgMgr(cfgMgr)
     {
         const bool terrain = Settings::terrain().mDistantTerrain;
@@ -666,7 +666,7 @@ namespace MWGui
 
     void SettingsWindow::onMaxLightsChanged(MyGUI::ComboBox* /*sender*/, size_t pos)
     {
-        Settings::shaders().mMaxLights.set(8 * (pos + 1));
+        Settings::shaders().mMaxLights.set(8 * static_cast<int>(pos + 1));
         apply();
         configureWidgets(mMainWidget, false);
     }
@@ -789,7 +789,7 @@ namespace MWGui
             }
             else
             {
-                Settings::get<int>(getSettingCategory(scroller), getSettingName(scroller)).set(pos);
+                Settings::get<int>(getSettingCategory(scroller), getSettingName(scroller)).set(static_cast<int>(pos));
                 valueStr = MyGUI::utility::toString(pos);
             }
             updateSliderLabel(scroller, valueStr);
@@ -972,12 +972,12 @@ namespace MWGui
         const int h = Settings::gui().mFontSize + 2;
         const int w = mControlsBox->getWidth() - 28;
         const int noWidgetsInRow = 2;
-        const int totalH = mControlsBox->getChildCount() / noWidgetsInRow * h;
+        const int totalH = static_cast<int>(mControlsBox->getChildCount() / noWidgetsInRow) * h;
 
         for (size_t i = 0; i < mControlsBox->getChildCount(); i++)
         {
             MyGUI::Widget* widget = mControlsBox->getChildAt(i);
-            widget->setCoord(0, i / noWidgetsInRow * h, w, h);
+            widget->setCoord(0, static_cast<int>(i / noWidgetsInRow * h), w, h);
         }
 
         // Canvas size must be expressed with VScroll disabled, otherwise MyGUI would expand the scroll area when the
@@ -1075,7 +1075,7 @@ namespace MWGui
     void SettingsWindow::onScriptListSelection(MyGUI::ListBox*, size_t index)
     {
         mScriptAdapter->detach();
-        mCurrentPage = -1;
+        mCurrentPage = static_cast<size_t>(-1);
         if (index < mScriptList->getItemCount())
         {
             mCurrentPage = *mScriptList->getItemDataAt<size_t>(index);
@@ -1189,7 +1189,7 @@ namespace MWGui
         else if (arg.button == SDL_CONTROLLER_BUTTON_LEFTSHOULDER)
         {
             size_t index = mSettingsTab->getIndexSelected();
-            index = wrap(index - 1, mSettingsTab->getItemCount());
+            index = wrap(index, mSettingsTab->getItemCount(), -1);
             mSettingsTab->setIndexSelected(index);
             MWBase::Environment::get().getWindowManager()->playSound(ESM::RefId::stringRefId("Menu Click"));
             return true;
@@ -1197,7 +1197,7 @@ namespace MWGui
         else if (arg.button == SDL_CONTROLLER_BUTTON_RIGHTSHOULDER)
         {
             size_t index = mSettingsTab->getIndexSelected();
-            index = wrap(index + 1, mSettingsTab->getItemCount());
+            index = wrap(index, mSettingsTab->getItemCount(), 1);
             mSettingsTab->setIndexSelected(index);
             MWBase::Environment::get().getWindowManager()->playSound(ESM::RefId::stringRefId("Menu Click"));
             return true;

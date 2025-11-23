@@ -119,7 +119,7 @@ namespace MWInput
         else if (VR::getVR() && arg.zrel != 0)
         {
             // KB+Mouse mode still needs to scroll
-            injectMouseMove(0, 0, arg.zrel, true);
+            injectMouseWheel(arg.zrel);
         }
 
         if (mMouseLookEnabled && !input->controlsDisabled())
@@ -311,28 +311,22 @@ namespace MWInput
             static_cast<int>(mGuiCursorX), static_cast<int>(mGuiCursorY), SDLUtil::sdlMouseButtonToMyGui(button));
     }
 
-    void MouseManager::injectMouseMove(float xMove, float yMove, int mouseWheelMove, bool allowedForVR)
+    void MouseManager::injectMouseMove(float xMove, float yMove, int mouseWheelMove)
     {
         // ## VR_PATCH BEGIN
-        if (VR::getVR() && !allowedForVR)
+        if (mVROwnsCursor)
             return;
         // ## VR_PATCH END
         mGuiCursorX += xMove;
         mGuiCursorY += yMove;
-        mMouseWheel += mouseWheelMove;
+        mMouseWheel += static_cast<int>(mouseWheelMove);
 
         const MyGUI::IntSize& viewSize = MyGUI::RenderManager::getInstance().getViewSize();
-        mGuiCursorX = std::clamp<float>(mGuiCursorX, 0.f, viewSize.width - 1);
-        mGuiCursorY = std::clamp<float>(mGuiCursorY, 0.f, viewSize.height - 1);
+        mGuiCursorX = std::clamp<float>(mGuiCursorX, 0.f, viewSize.width - 1.f);
+        mGuiCursorY = std::clamp<float>(mGuiCursorY, 0.f, viewSize.height - 1.f);
 
-        // MyGUI::InputManager::getInstance().injectMouseMove(
-        //     static_cast<int>(mGuiCursorX), static_cast<int>(mGuiCursorY), mMouseWheel);
-
-        ////MyGUI::InputManager::getInstance().injectMouseMove(
-        ////    static_cast<int>(mGuiCursorX), static_cast<int>(mGuiCursorY), mMouseWheel);
-        // MWBase::WindowManager* winMgr = MWBase::Environment::get().getWindowManager();
-        // winMgr->setCursorActive(true);
-        // warpMouse();
+        MyGUI::InputManager::getInstance().injectMouseMove(
+            static_cast<int>(mGuiCursorX), static_cast<int>(mGuiCursorY), mMouseWheel);
     }
 
     void MouseManager::warpMouse()
@@ -358,12 +352,19 @@ namespace MWInput
         //    static_cast<int>(mGuiCursorX), static_cast<int>(mGuiCursorY), mMouseWheel);
         warpMouse();
     }
+
+    void MouseManager::injectMouseWheel(int mouseWheelMove)
+    {
+        mMouseWheel += mouseWheelMove;
+        MyGUI::InputManager::getInstance().injectMouseMove(
+            static_cast<int>(mGuiCursorX), static_cast<int>(mGuiCursorY), mMouseWheel);
+    }
     // ## VR_PATCH END
 
     void MouseManager::warpMouseToWidget(MyGUI::Widget* widget)
     {
-        float widgetX = widget->getAbsoluteCoord().left + widget->getWidth() / 2;
-        float widgetY = widget->getAbsoluteCoord().top + widget->getHeight() / 4;
+        float widgetX = widget->getAbsoluteCoord().left + widget->getWidth() / 2.f;
+        float widgetY = widget->getAbsoluteCoord().top + widget->getHeight() / 4.f;
         if (std::abs(mGuiCursorX - widgetX) > 1 || std::abs(mGuiCursorY - widgetY) > 1)
         {
             mGuiCursorX = widgetX;

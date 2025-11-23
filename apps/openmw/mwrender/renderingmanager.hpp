@@ -293,7 +293,6 @@ namespace MWRender
         /// Cast a ray from a node in the scene graph
         RayResult castRay(const osg::Transform* source, float maxDistance, bool ignorePlayer, bool ignoreActors = false,
             uint32_t ignoreMask = MWRender::Mask_3DGUI);
-        void enableVRPointer(bool left, bool right);
         osg::Uniform* mUniformStereoViewOffsets;
         osg::Uniform* mUniformStereoProjections;
 

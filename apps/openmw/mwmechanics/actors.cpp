@@ -587,8 +587,8 @@ namespace MWMechanics
             float to = dir.y();
             float angle = std::atan2(from, to);
             actorState.setAngleToPlayer(angle);
-            float deltaAngle = Misc::normalizeAngle(angle - actor.getRefData().getPosition().rot[2]);
-            if (!Settings::game().mSmoothMovement || std::abs(deltaAngle) > osg::DegreesToRadians(60.f))
+            double deltaAngle = Misc::normalizeAngle(angle - actor.getRefData().getPosition().rot[2]);
+            if (!Settings::game().mSmoothMovement || std::abs(deltaAngle) > osg::DegreesToRadians(60.0))
                 actorState.setTurningToPlayer(true);
         }
     }
@@ -852,7 +852,7 @@ namespace MWMechanics
             const auto [health, magicka] = getRestorationPerHourOfSleep(ptr);
 
             DynamicStat<float> stat = stats.getHealth();
-            stat.setCurrent(stat.getCurrent() + health * hours);
+            stat.setCurrent(static_cast<float>(stat.getCurrent() + health * hours));
             stats.setHealth(stat);
 
             double restoreHours = hours;
@@ -879,7 +879,7 @@ namespace MWMechanics
             if (restoreHours > 0)
             {
                 stat = stats.getMagicka();
-                stat.setCurrent(stat.getCurrent() + magicka * restoreHours);
+                stat.setCurrent(static_cast<float>(stat.getCurrent() + magicka * restoreHours));
                 stats.setMagicka(stat);
             }
         }
@@ -904,7 +904,7 @@ namespace MWMechanics
         const float x
             = (fFatigueReturnBase + fFatigueReturnMult * (1 - normalizedEncumbrance)) * (fEndFatigueMult * endurance);
 
-        fatigue.setCurrent(fatigue.getCurrent() + 3600 * x * hours);
+        fatigue.setCurrent(static_cast<float>(fatigue.getCurrent() + 3600 * x * hours));
         stats.setFatigue(fatigue);
     }
 
@@ -1159,9 +1159,8 @@ namespace MWMechanics
                 if (playerStats.getBounty() >= cutoff * iCrimeThresholdMultiplier)
                 {
                     mechanicsManager->startCombat(ptr, player, &cachedAllies.getActorsSidingWith(player));
-                    creatureStats.setHitAttemptActorId(
-                        playerClass.getCreatureStats(player)
-                            .getActorId()); // Stops the guard from quitting combat if player is unreachable
+                    // Stops the guard from quitting combat if player is unreachable
+                    creatureStats.setHitAttemptActorId(playerClass.getCreatureStats(player).getActorId());
                 }
                 else
                     creatureStats.getAiSequence().stack(AiPursue(player), ptr);
@@ -1237,7 +1236,7 @@ namespace MWMechanics
         // Fade away actors on large distance (>90% of actor's processing distance)
         float visibilityRatio = 1.0;
         const float fadeStartDistance = actorsProcessingRange * 0.9f;
-        const float fadeEndDistance = actorsProcessingRange;
+        const float fadeEndDistance = static_cast<float>(actorsProcessingRange);
         const float fadeRatio = (dist - fadeStartDistance) / (fadeEndDistance - fadeStartDistance);
         if (fadeRatio > 0)
             visibilityRatio -= std::max(0.f, fadeRatio);
@@ -1281,7 +1280,7 @@ namespace MWMechanics
         // Otherwise check if any actor in AI processing range sees the target actor
         std::vector<MWWorld::Ptr> neighbors;
         osg::Vec3f position(actor.getRefData().getPosition().asVec3());
-        getObjectsInRange(position, Settings::game().mActorsProcessingRange, neighbors);
+        getObjectsInRange(position, static_cast<float>(Settings::game().mActorsProcessingRange), neighbors);
         for (const MWWorld::Ptr& neighbor : neighbors)
         {
             if (neighbor == actor)
@@ -1880,7 +1879,7 @@ namespace MWMechanics
 
     void Actors::rest(double hours, bool sleep) const
     {
-        float duration = hours * 3600.f;
+        float duration = static_cast<float>(hours * 3600);
         const float timeScale = MWBase::Environment::get().getWorld()->getTimeManager()->getGameTimeScale();
         if (timeScale != 0.f)
             duration /= timeScale;
@@ -1955,7 +1954,7 @@ namespace MWMechanics
 
             std::vector<MWWorld::Ptr> observers;
             const osg::Vec3f position(player.getRefData().getPosition().asVec3());
-            const float radius = std::min<float>(fSneakUseDist, Settings::game().mActorsProcessingRange);
+            const float radius = std::min(fSneakUseDist, static_cast<float>(Settings::game().mActorsProcessingRange));
             getObjectsInRange(position, radius, observers);
 
             std::set<MWWorld::Ptr> sidingActors;
@@ -2259,7 +2258,7 @@ namespace MWMechanics
         std::vector<MWWorld::Ptr> list;
         std::vector<MWWorld::Ptr> neighbors;
         const osg::Vec3f position(actor.getRefData().getPosition().asVec3());
-        getObjectsInRange(position, Settings::game().mActorsProcessingRange, neighbors);
+        getObjectsInRange(position, static_cast<float>(Settings::game().mActorsProcessingRange), neighbors);
         for (const MWWorld::Ptr& neighbor : neighbors)
         {
             if (neighbor == actor)
@@ -2280,7 +2279,7 @@ namespace MWMechanics
         std::vector<MWWorld::Ptr> list;
         std::vector<MWWorld::Ptr> neighbors;
         osg::Vec3f position(actor.getRefData().getPosition().asVec3());
-        getObjectsInRange(position, Settings::game().mActorsProcessingRange, neighbors);
+        getObjectsInRange(position, static_cast<float>(Settings::game().mActorsProcessingRange), neighbors);
 
         std::set<MWWorld::Ptr> followers;
         getActorsFollowing(actor, followers);

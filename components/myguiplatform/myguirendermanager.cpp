@@ -157,7 +157,7 @@ namespace MyGUIPlatform
                         reinterpret_cast<const char*>(vbo->getArray(0)->getDataPointer()) + 16);
                 }
 
-                glDrawArrays(GL_TRIANGLES, 0, batch.mVertexCount);
+                glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(batch.mVertexCount));
 
                 if (batch.mStateSet)
                 {
@@ -348,7 +348,8 @@ namespace MyGUIPlatform
 
     osg::UByteArray* OSGVertexBuffer::create()
     {
-        mVertexArray[mCurrentBuffer] = new osg::UByteArray(mNeedVertexCount * sizeof(MyGUI::Vertex));
+        mVertexArray[mCurrentBuffer]
+            = new osg::UByteArray(static_cast<unsigned int>(mNeedVertexCount * sizeof(MyGUI::Vertex)));
 
         mBuffer[mCurrentBuffer] = new osg::VertexBufferObject;
         mBuffer[mCurrentBuffer]->setDataVariance(osg::Object::DYNAMIC);
@@ -523,8 +524,9 @@ namespace MyGUIPlatform
         flipMat.preMultScale(osg::Vec3f(1, -1, 1));
         mGuiStateSet->setTextureAttribute(0, new osg::TexMat(flipMat), osg::StateAttribute::ON);
 
-// VR-TODO: Nope, definitely not cleaning this up correctly
         mSceneRoot->addChild(createGUICamera(osg::Camera::POST_RENDER, ""));
+        osg::ref_ptr<osg::Viewport> vp = mViewer->getCamera()->getViewport();
+        setViewSize(static_cast<int>(vp->width()), static_cast<int>(vp->height()));
 //## VR_PATCH END
 
         MYGUI_PLATFORM_LOG(Info, getClassTypeName() << " successfully initialized");
@@ -674,7 +676,7 @@ namespace MyGUIPlatform
         if (height < 1)
             height = 1;
 
-        mViewSize.set(width * mInvScalingFactor, height * mInvScalingFactor);
+        mViewSize.set(static_cast<int>(width * mInvScalingFactor), static_cast<int>(height * mInvScalingFactor));
         onResizeView(mViewSize);
     }
 
