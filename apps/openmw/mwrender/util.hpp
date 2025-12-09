@@ -2,6 +2,7 @@
 #define OPENMW_MWRENDER_UTIL_H
 
 #include <osg/Camera>
+#include <components/vfs/pathutil.hpp>
 #include <osg/LightModel>
 #include <osg/NodeCallback>
 
@@ -23,9 +24,10 @@ namespace MWRender
     // Overrides the texture of nodes in the mesh that had the same NiTexturingProperty as the first NiTexturingProperty
     // of the .NIF file's root node, if it had a NiTexturingProperty. Used for applying "particle textures" to magic
     // effects.
-    void overrideFirstRootTexture(std::string_view texture, Resource::ResourceSystem* resourceSystem, osg::Node& node);
+    void overrideFirstRootTexture(
+        VFS::Path::NormalizedView texture, Resource::ResourceSystem* resourceSystem, osg::Node& node);
 
-    void overrideTexture(std::string_view texture, Resource::ResourceSystem* resourceSystem, osg::Node& node);
+    void overrideTexture(VFS::Path::NormalizedView texture, Resource::ResourceSystem* resourceSystem, osg::Node& node);
 
     // Node callback to entirely skip the traversal.
     class NoTraverseCallback : public osg::NodeCallback
