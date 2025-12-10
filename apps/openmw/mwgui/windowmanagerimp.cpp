@@ -223,11 +223,11 @@ namespace MWGui
         SDL_GL_GetDrawableSize(window, &dw, &dh);
 
         mScalingFactor = Settings::gui().mScalingFactor * (dw / w);
+        constexpr VFS::Path::NormalizedView resourcePath("mygui");
         mGuiPlatform = std::make_unique<MyGUIPlatform::Platform>(viewer, guiRoot, resourceSystem->getImageManager(),
-            resourceSystem->getVFS(), mScalingFactor, "mygui", logpath / "MyGUI.log");
+            resourceSystem->getVFS(), mScalingFactor, resourcePath, logpath / "MyGUI.log");
 //## VR_PATCH BEGIN
-// Force GUI window to be 1024x1024
-        if(VR::getVR())
+        if (VR::getVR())
             mGuiPlatform->getRenderManagerPtr()->setViewSize(1024, 1024);
 //## VR_PATCH END
 
