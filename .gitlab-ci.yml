@@ -751,6 +751,7 @@ Ubuntu_Clang_tests_Debug:
   variables:
     targets: all
   # When CCache doesn't exist (e.g. first build on a fork), build takes more than 1h, which is the default for forks.
+  # This is capped at 2h by GitLab for Windows Shared Runners
   timeout: 2h
 
 .Windows_Ninja_Release:
@@ -908,6 +909,7 @@ Ubuntu_Clang_tests_Debug:
   variables:
     targets: ALL_BUILD
   # When CCache doesn't exist (e.g. first build on a fork), build takes more than 1h, which is the default for forks.
+  # This is capped at 2h by GitLab for Windows Shared Runners
   timeout: 2h
 
 .Windows_MSBuild_Release:
