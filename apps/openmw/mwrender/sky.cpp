@@ -518,7 +518,7 @@ namespace MWRender
 
     bool SkyManager::getRainRipplesEnabled() const
     {
-        if (!mEnabled || mIsStorm)
+        if (!mEnabled)
             return false;
 
         if (hasRain())
@@ -532,10 +532,7 @@ namespace MWRender
 
     float SkyManager::getPrecipitationAlpha() const
     {
-        if (mEnabled && !mIsStorm && (hasRain() || mParticleNode))
-            return mPrecipitationAlpha;
-
-        return 0.f;
+        return mPrecipitationAlpha;
     }
 
     void SkyManager::update(float duration)
@@ -731,7 +728,7 @@ namespace MWRender
                         = static_cast<osgParticle::ParticleSystem*>(findPSVisitor.mFoundNodes[i]);
 
                     osg::ref_ptr<osgParticle::ModularProgram> program = new osgParticle::ModularProgram;
-                    if (!mIsStorm)
+                    if (occlusionEnabledForEffect)
                         program->addOperator(new WrapAroundOperator(mCamera, defaultWrapRange));
                     program->addOperator(new WeatherAlphaOperator(mPrecipitationAlpha, false));
                     program->setParticleSystem(ps);
