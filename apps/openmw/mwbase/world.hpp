@@ -214,9 +214,6 @@ namespace MWBase
         ///< Return a pointer to a liveCellRef with the given name.
         /// \param activeOnly do non search inactive cells.
 
-        virtual MWWorld::Ptr searchPtrViaActorId(int actorId) = 0;
-        ///< Search is limited to the active cells.
-
         virtual MWWorld::Ptr findContainer(const MWWorld::ConstPtr& ptr) = 0;
         ///< Return a pointer to a liveCellRef which contains \a ptr.
         /// \note Search is limited to the active cells.
@@ -393,7 +390,7 @@ namespace MWBase
         virtual void applyDeferredPreviewRotationToPlayer(float dt) = 0;
         virtual void disableDeferredPreviewRotation() = 0;
 
-        virtual void saveLoaded() = 0;
+        virtual void saveLoaded(const ESM::ESMReader& reader) = 0;
 
         virtual void setupPlayer() = 0;
         virtual void renderPlayer() = 0;
