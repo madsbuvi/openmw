@@ -2919,4 +2919,10 @@ namespace MWGui
         else
             mInventoryTabsOverlay->setVisible(false);
     }
+
+    void WindowManager::inventoryUpdated(const MWWorld::Ptr& ptr) const
+    {
+        for (const auto& window : mWindows)
+            window->onInventoryUpdate(ptr);
+    }
 }
