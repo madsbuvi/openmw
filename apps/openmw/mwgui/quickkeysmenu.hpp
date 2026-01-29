@@ -112,6 +112,8 @@ namespace MWGui
         void onOpen() override;
         bool exit() override;
 
+        void setActiveControllerWindow(bool active) override;
+
     private:
         MyGUI::Button* mCancelButton;
         SpellView* mMagicList;
@@ -122,7 +124,6 @@ namespace MWGui
         void onModelIndexSelected(SpellModel::ModelIndex index);
 
         bool onControllerButtonEvent(const SDL_ControllerButtonEvent& arg) override;
-        size_t mControllerFocus = 0;
     };
 }
 
