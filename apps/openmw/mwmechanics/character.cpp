@@ -1268,18 +1268,20 @@ namespace MWMechanics
         if (mAttackStrength == -1.f)
             mAttackStrength = std::min(1.f, 0.1f + Misc::Rng::rollClosedProbability(prng));
         ESM::WeaponType::Class weapclass = getWeaponType(mWeaponType)->mWeaponClass;
-        if (weapclass != ESM::WeaponType::Ranged && weapclass != ESM::WeaponType::Thrown)
+        if (weapclass != ESM::WeaponType::Ranged)
         {
-            // ## VR_PATCH BEGIN
-            //  split evaluateHit into evaluateHit and findMeleeVictim so VR realistic combat can provide
-            //  its victim as a parameter.
-            auto res = mPtr.getClass().evaluateHit(mPtr);
-            mAttackSuccess = res.mSuccess;
-            mAttackVictim = res.mVictim;
-            mAttackHitPos = res.mHitPosition;
-            // ## VR_PATCH END
-            if (!mAttackSuccess)
-                mAttackStrength = 0.f;
+            if (weapclass != ESM::WeaponType::Thrown)
+            {
+                // ## VR_PATCH BEGIN
+                // split evaluateHit so VR realistic combat can provide its victim as a parameter.
+                auto res = mPtr.getClass().evaluateHit(mPtr);
+                mAttackSuccess = res.mSuccess;
+                mAttackVictim = res.mVictim;
+                mAttackHitPos = res.mHitPosition;
+                // ## VR_PATCH END
+                if (!mAttackSuccess)
+                    mAttackStrength = 0.f;
+            }
             playSwishSound();
         }
 
