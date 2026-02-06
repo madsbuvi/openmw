@@ -11,6 +11,33 @@ local replacedWindows = {}
 local hiddenWindows = {}
 local modeStack = {}
 
+local windowToLayer = {
+    Alchemy = 'Windows',
+    Book = 'JournalBooks',
+    Companion = 'Windows',
+    Container = 'Windows',
+    Dialogue = 'Windows',
+    EnchantingDialog = 'Windows',
+    Inventory = 'Windows',
+    JailScreen = 'Windows',
+    Journal = 'JournalBooks',
+    LevelUpDialog = 'Windows',
+    Magic = 'Windows',
+    Map = 'Windows',
+    MerchantRepair = 'Windows',
+    QuickKeys = 'Windows',
+    Recharge = 'Windows',
+    Repair = 'Windows',
+    Scroll = 'JournalBooks',
+    SpellBuying = 'Windows',
+    SpellCreationDialog = 'Windows',
+    Stats = 'Windows',
+    Trade = 'Windows',
+    Training = 'Windows',
+    Travel = 'Windows',
+    WaitDialog = 'Windows',
+}
+
 local modePause = {}
 for _, mode in pairs(MODE) do
     modePause[mode] = true
@@ -182,6 +209,11 @@ return {
         -- Use `view(I.UI.WINDOW)` in `luap` console mode to see the list.
         -- @field [parent=#UI] #table WINDOW
         WINDOW = util.makeStrictReadOnly(WINDOW),
+        
+        --- Window to layer conversion.
+        -- Use `view(I.UI.windowToLayer)` in `luap` console mode to see the list.
+        -- @field [parent=#UI] #table 
+        windowToLayer = util.makeStrictReadOnly(windowToLayer),
 
         --- Register new implementation for the window with given name; overrides previous implementation.
         -- Adding new windows is not supported yet. At the moment it is only possible to override built-in windows.
