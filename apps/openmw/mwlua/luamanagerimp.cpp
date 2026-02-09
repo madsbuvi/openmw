@@ -98,9 +98,9 @@ namespace MWLua
             playerScripts->onVRFrame();
     }
 
-    void LuaManager::initConfiguration()
+    void LuaManager::initConfiguration(bool reload)
     {
-        mConfiguration.init(MWBase::Environment::get().getESMStore()->getLuaScriptsCfg());
+        mConfiguration.init(MWBase::Environment::get().getESMStore()->getLuaScriptsCfg(), reload);
         Log(Debug::Verbose) << "Lua scripts configuration (" << mConfiguration.size() << " scripts):";
         for (size_t i = 0; i < mConfiguration.size(); ++i)
             Log(Debug::Verbose) << "#" << i << " " << LuaUtil::scriptCfgToString(mConfiguration[i]);
@@ -149,7 +149,7 @@ namespace MWLua
             mPlayerStorage.setActive(true);
             mGlobalStorage.setActive(false);
 
-            initConfiguration();
+            initConfiguration(false);
             mInitialized = true;
             mMenuScripts.addAutoStartedScripts();
         });
@@ -685,6 +685,7 @@ namespace MWLua
 
         writer.writeHNT<double>("LUAW", MWBase::Environment::get().getWorld()->getTimeManager()->getSimulationTime());
         writer.writeFormId(MWBase::Environment::get().getWorldModel()->getLastGeneratedRefNum(), true);
+        mConfiguration.write(writer);
         ESM::LuaScripts globalScripts;
         mGlobalScripts.save(globalScripts);
         globalScripts.save(writer);
@@ -705,6 +706,8 @@ namespace MWLua
         if (lastGenerated.hasContentFile())
             throw std::runtime_error("Last generated RefNum is invalid");
         MWBase::Environment::get().getWorldModel()->setLastGeneratedRefNum(lastGenerated);
+
+        mConfiguration.read(reader);
 
         // TODO: don't execute scripts right away, it will be necessary in multiplayer where global storage requires
         // initialization. For now just set global storage as active slightly before it would be set by gameLoaded()
@@ -761,7 +764,6 @@ namespace MWLua
         mLua.dropScriptCache();
         mInputActions.clear(true);
         mInputTriggers.clear(true);
-        initConfiguration();
 
         ESM::LuaScripts globalData;
 
@@ -784,6 +786,8 @@ namespace MWLua
             scripts->save(data);
             localData[id] = std::move(data);
         }
+
+        initConfiguration(true);
 
         mMenuScripts.removeAllScripts();
 
