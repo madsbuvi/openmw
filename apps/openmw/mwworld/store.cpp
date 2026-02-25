@@ -1037,10 +1037,7 @@ namespace MWWorld
     // Dialogue
     //=========================================================================
 
-    Store<ESM::Dialogue>::Store()
-        : mKeywordSearchModFlag(true)
-    {
-    }
+    Store<ESM::Dialogue>::Store() {}
 
     void Store<ESM::Dialogue>::setUp()
     {
@@ -1137,19 +1134,9 @@ namespace MWWorld
             list.push_back(dialogue->mId);
     }
 
-    const MWDialogue::KeywordSearch<int>& Store<ESM::Dialogue>::getDialogIdKeywordSearch() const
+    bool Store<ESM::Dialogue>::getKeywordSearchModFlag() const
     {
-        if (mKeywordSearchModFlag)
-        {
-            mKeywordSearch.clear();
-
-            for (const ESM::Dialogue& topic : *this)
-                mKeywordSearch.seed(topic.mStringId, 0 /*unused*/);
-
-            mKeywordSearchModFlag = false;
-        }
-
-        return mKeywordSearch;
+        return std::exchange(mKeywordSearchModFlag, false);
     }
 
     // ESM4 Cell

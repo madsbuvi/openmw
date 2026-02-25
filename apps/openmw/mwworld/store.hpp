@@ -27,8 +27,6 @@
 #include <components/misc/rng.hpp>
 #include <components/misc/strings/algorithm.hpp>
 
-#include "../mwdialogue/keywordsearch.hpp"
-
 namespace ESM
 {
     struct LandTexture;
@@ -511,8 +509,7 @@ namespace MWWorld
         /// @warning ESM::Dialogue Store currently implements a sorted order for unknown reasons.
         std::vector<ESM::Dialogue*> mShared;
 
-        mutable bool mKeywordSearchModFlag;
-        mutable MWDialogue::KeywordSearch<int /*unused*/> mKeywordSearch;
+        mutable bool mKeywordSearchModFlag{ true };
 
     public:
         Store();
@@ -535,7 +532,7 @@ namespace MWWorld
 
         void listIdentifier(std::vector<ESM::RefId>& list) const override;
 
-        const MWDialogue::KeywordSearch<int>& getDialogIdKeywordSearch() const;
+        bool getKeywordSearchModFlag() const;
     };
 
     template <typename T>
