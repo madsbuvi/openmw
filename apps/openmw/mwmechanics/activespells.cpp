@@ -494,6 +494,8 @@ namespace MWMechanics
             });
             if (found != mSpells.end())
             {
+                if (!spell.hasFlag(ESM::ActiveSpells::Flag_Temporary))
+                    return;
                 if (merge(found->mEffects, spell.mEffects))
                     return;
                 for (auto& effect : found->mEffects)
