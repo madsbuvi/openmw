@@ -207,9 +207,6 @@ namespace MyGUIPlatform
             mDummyTexture->setWrap(osg::Texture::WRAP_T, osg::Texture::CLAMP_TO_EDGE);
             mDummyTexture->setInternalFormat(GL_RGB);
             mDummyTexture->setTextureSize(1, 1);
-//## VR_PATCH BEGIN
-// State moved to the parent. Otherwise we would have a redundant stateset per Drawable.
-//## VR_PATCH END
         }
         Drawable(const Drawable& copy, const osg::CopyOp& copyop = osg::CopyOp::SHALLOW_COPY)
             : osg::Drawable(copy, copyop)
@@ -518,12 +515,6 @@ namespace MyGUIPlatform
         mGuiStateSet->setTextureMode(0, GL_TEXTURE_2D, osg::StateAttribute::ON);
         mGuiStateSet->setMode(GL_DEPTH_TEST, osg::StateAttribute::OFF);
         mGuiStateSet->setMode(GL_BLEND, osg::StateAttribute::ON);
-        // need to flip tex coords since MyGUI uses DirectX convention of top left image origin
-        osg::Matrix flipMat;
-        flipMat.preMultTranslate(osg::Vec3f(0, 1, 0));
-        flipMat.preMultScale(osg::Vec3f(1, -1, 1));
-        mGuiStateSet->setTextureAttribute(0, new osg::TexMat(flipMat), osg::StateAttribute::ON);
-
         mSceneRoot->addChild(createGUICamera(osg::Camera::POST_RENDER, ""));
         osg::ref_ptr<osg::Viewport> vp = mViewer->getCamera()->getViewport();
         setViewSize(static_cast<int>(vp->width()), static_cast<int>(vp->height()));

@@ -320,11 +320,10 @@ namespace NifOsg
             float value = getInputValue(nv);
 
             // First scale the UV relative to its center, then apply the offset.
-            // U offset is flipped regardless of the graphics library,
-            // while V offset is flipped to account for OpenGL Y axis convention.
+            // U offset is flipped regardless of the graphics library
             osg::Vec3f uvOrigin(0.5f, 0.5f, 0.f);
             osg::Vec3f uvScale(mUScale.interpKey(value), mVScale.interpKey(value), 1.f);
-            osg::Vec3f uvTrans(-mUTrans.interpKey(value), -mVTrans.interpKey(value), 0.f);
+            osg::Vec3f uvTrans(-mUTrans.interpKey(value), mVTrans.interpKey(value), 0.f);
 
             osg::Matrixf mat = osg::Matrixf::translate(uvOrigin);
             mat.preMultScale(uvScale);

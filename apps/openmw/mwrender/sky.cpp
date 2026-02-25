@@ -392,8 +392,9 @@ namespace MWRender
         osg::Vec3 rainRange = osg::Vec3(mRainDiameter, mRainDiameter, (mRainMinHeight + mRainMaxHeight) / 2.f);
 
         mRainParticleSystem->setParticleAlignment(osgParticle::ParticleSystem::FIXED);
-        mRainParticleSystem->setAlignVectorX(osg::Vec3f(0.1f, 0, 0));
-        mRainParticleSystem->setAlignVectorY(osg::Vec3f(0, 0, 1));
+        // Vertical placement with some horizontal compression.
+        // Z-down alignment is used so that the UV uses Y-down convention
+        mRainParticleSystem->setAlignVectors(osg::Vec3f(0.1f, 0, 0), osg::Vec3f(0, 0, -1.f));
 
         osg::ref_ptr<osg::StateSet> stateset = mRainParticleSystem->getOrCreateStateSet();
 

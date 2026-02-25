@@ -448,7 +448,7 @@ namespace ESMTerrain
             int startx = static_cast<int>(sample.mDstRow) * quadSize;
             for (int y = std::max(0, starty + 1); y <= starty + quadSize && y < blendmapSize; ++y)
             {
-                unsigned char* const row = baseBlendmap + (blendmapSize - y - 1) * blendmapSize;
+                unsigned char* const row = baseBlendmap + y * blendmapSize;
                 for (int x = startx; x < startx + quadSize && x < blendmapSize; ++x)
                     row[x] = 255;
             }
@@ -465,7 +465,7 @@ namespace ESMTerrain
                     {
                         continue;
                     }
-                    size_t index = static_cast<size_t>((blendmapSize - starty - y - 1) * blendmapSize + startx + x);
+                    size_t index = static_cast<size_t>((starty + y) * blendmapSize + startx + x);
                     auto delta = static_cast<unsigned char>(std::clamp(static_cast<int>(v.opacity * 255.f), 0, 255));
                     baseBlendmap[index] = std::max<unsigned char>(0, baseBlendmap[index] - delta);
                     layerBlendmap[index] = delta;
@@ -552,7 +552,7 @@ namespace ESMTerrain
                 }
                 const std::size_t layerIndex = found->second;
                 unsigned char* const data = blendmaps[layerIndex]->data();
-                const std::size_t realY = (blendmapSize - y - 1) * imageScaleFactor;
+                const std::size_t realY = y * imageScaleFactor;
                 const std::size_t realX = x * imageScaleFactor;
                 data[((realY + 0) * blendmapImageSize + realX + 0)] = 255;
                 data[((realY + 1) * blendmapImageSize + realX + 0)] = 255;

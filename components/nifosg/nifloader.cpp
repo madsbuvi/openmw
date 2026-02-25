@@ -1747,7 +1747,7 @@ namespace NifOsg
                 if (hasColors)
                     colors.emplace_back(elem.mVertColor[0], elem.mVertColor[1], elem.mVertColor[2], elem.mVertColor[3]);
                 if (hasUV)
-                    uvlist.emplace_back(halfToFloat(elem.mUV[0]), 1.0f - halfToFloat(elem.mUV[1]));
+                    uvlist.emplace_back(halfToFloat(elem.mUV[0]), halfToFloat(elem.mUV[1]));
             }
 
             if (!vertices.empty())
@@ -2051,7 +2051,6 @@ namespace NifOsg
             }
 
             image->setMipmapLevels(mipmapOffsets);
-            image->flipVertical();
 
             return image;
         }
