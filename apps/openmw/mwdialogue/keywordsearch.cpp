@@ -11,7 +11,10 @@ namespace
 {
     std::string_view removePseudoAsterisks(std::string_view phrase)
     {
-        return phrase.substr(0, phrase.find_last_not_of('\x7F') + 1);
+        std::size_t lastNonAsteriskPos = phrase.find_last_not_of('\x7F');
+        if (lastNonAsteriskPos == std::string_view::npos)
+            return {};
+        return phrase.substr(0, lastNonAsteriskPos + 1);
     }
 }
 
@@ -56,13 +59,7 @@ namespace MWDialogue
                     std::string_view remainingText(it + 1, end);
                     std::string_view remainingKeyword = std::string_view(current->mKeyword).substr(it + 1 - i);
                     if (Misc::StringUtils::ciStartsWith(remainingText, remainingKeyword))
-                    {
-                        Match match;
-                        match.mTopicId = current->mTopicId;
-                        match.mBeg = i;
-                        match.mEnd = i + current->mKeyword.size();
-                        matches.push_back(match);
-                    }
+                        matches.emplace_back(i, i + current->mKeyword.size(), current->mTopicId);
                 }
             }
         }
@@ -170,7 +167,7 @@ namespace MWDialogue
                 token.mTopicId.append(id.size() - token.mTopicId.size(), '*');
                 token.mTopicId = Misc::StringUtils::lowerCase(storage.topicStandardForm(token.mTopicId));
 
-                matches.push_back(token);
+                matches.push_back(std::move(token));
 
                 iterationPos = posEnd + 1;
             }
