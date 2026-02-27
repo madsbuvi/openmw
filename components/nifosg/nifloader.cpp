@@ -329,7 +329,7 @@ namespace NifOsg
             }
 
             Nif::ExtraList extraList = seq->getExtraList();
-            if (extraList.empty())
+            if (extraList.empty() || extraList[0].empty())
             {
                 Log(Debug::Warning) << "NIFFile Warning: NiSequenceStreamHelper has no text keys. File: "
                                     << nif.getFilename();
@@ -350,6 +350,9 @@ namespace NifOsg
             for (size_t i = 1; i < extraList.size() && !ctrl.empty(); i++, (ctrl = ctrl->mNext))
             {
                 Nif::ExtraPtr extra = extraList[i];
+                if (extra.empty())
+                    continue;
+
                 if (extra->mRecordType != Nif::RC_NiStringExtraData
                     || ctrl->mRecordType != Nif::RC_NiKeyframeController)
                 {
@@ -696,6 +699,9 @@ namespace NifOsg
 
             for (const auto& e : nifNode->getExtraList())
             {
+                if (e.empty())
+                    continue;
+
                 if (e->mRecordType == Nif::RC_NiTextKeyExtraData && args.mTextKeys)
                 {
                     const Nif::NiTextKeyExtraData* tk = static_cast<const Nif::NiTextKeyExtraData*>(e.getPtr());

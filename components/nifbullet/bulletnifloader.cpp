@@ -115,7 +115,7 @@ namespace NifBullet
             const Nif::NiIntegerExtraData* bsxFlags = nullptr;
             for (const auto& e : node.getExtraList())
             {
-                if (e->mRecordType == Nif::RC_BSXFlags)
+                if (!e.empty() && e->mRecordType == Nif::RC_BSXFlags)
                 {
                     bsxFlags = static_cast<const Nif::NiIntegerExtraData*>(e.getPtr());
                     break;
@@ -155,7 +155,7 @@ namespace NifBullet
             // Check for extra data
             for (const auto& e : node.getExtraList())
             {
-                if (e->mRecordType == Nif::RC_NiStringExtraData)
+                if (!e.empty() && e->mRecordType == Nif::RC_NiStringExtraData)
                 {
                     // String markers may contain important information
                     // affecting the entire subtree of this node
