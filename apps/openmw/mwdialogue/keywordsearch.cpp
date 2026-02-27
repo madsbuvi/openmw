@@ -39,7 +39,7 @@ namespace MWDialogue
             {
                 Point prev = i;
                 --prev;
-                constexpr std::string_view wordSeparators = "\n\r \t'\"";
+                constexpr std::string_view wordSeparators = "\n\r \t'\"([";
                 if (wordSeparators.find(*prev) == std::string_view::npos)
                     continue;
             }

@@ -152,6 +152,26 @@ TEST_F(KeywordSearchTest, keyword_test_initial_substrings_match)
     EXPECT_EQ(std::string(matches[0].mBeg, matches[0].mEnd), "Orc");
 }
 
+TEST_F(KeywordSearchTest, keyword_test_polish_word_separators)
+{
+    // The Polish version supports ( and [ as word separators. The English version doesn't, but refuses to highlight
+    // topics starting with those characters anyway
+    MWDialogue::KeywordSearch search;
+    search.seed("Jim Stacey", {});
+    search.seed("gildia wojowników", {});
+
+    std::string text
+        = "Dżentelmen (Jim Stacey) kazał mi zabić człowieka imieniem Sjoring Kamienne Serce, mistrza gildii wojowników "
+          "[gildia wojowników] w mieście Vivek.";
+
+    std::vector<MWDialogue::KeywordSearch::Match> matches;
+    search.highlightKeywords(text.begin(), text.end(), matches);
+
+    ASSERT_EQ(matches.size(), 2);
+    EXPECT_EQ(std::string(matches[0].mBeg, matches[0].mEnd), "Jim Stacey");
+    EXPECT_EQ(std::string(matches[1].mBeg, matches[1].mEnd), "gildia wojowników");
+}
+
 TEST_F(KeywordSearchTest, keyword_test_french_substrings)
 {
     // Substrings within words should not match
