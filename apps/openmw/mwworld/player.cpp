@@ -114,7 +114,8 @@ namespace MWWorld
         for (const auto& attribute : store->get<ESM::Attribute>())
         {
             MWMechanics::AttributeValue value = npcStats.getAttribute(attribute.mId);
-            value.setModifier(attribute.mWerewolfValue - value.getModified());
+            value.setBase(value.getBase(), true);
+            value.setModifier(attribute.mWerewolfValue - value.getBase());
             npcStats.setAttribute(attribute.mId, value);
         }
 
@@ -125,7 +126,8 @@ namespace MWWorld
                 continue;
 
             MWMechanics::SkillValue& value = npcStats.getSkill(skill.mId);
-            value.setModifier(skill.mWerewolfValue - value.getModified());
+            value.setBase(value.getBase(), true);
+            value.setModifier(skill.mWerewolfValue - value.getBase());
         }
     }
 

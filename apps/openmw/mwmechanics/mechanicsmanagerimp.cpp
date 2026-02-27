@@ -2039,7 +2039,8 @@ namespace MWMechanics
             = MWBase::Environment::get().getESMStore()->get<ESM::Skill>().find(ESM::Skill::Acrobatics);
         MWMechanics::NpcStats& stats = actor.getClass().getNpcStats(actor);
         auto& skill = stats.getSkill(acrobatics->mId);
-        skill.setModifier(acrobatics->mWerewolfValue - skill.getModified());
+        skill.setBase(skill.getBase(), true);
+        skill.setModifier(acrobatics->mWerewolfValue - skill.getBase());
     }
 
     void MechanicsManager::cleanupSummonedCreature(ESM::RefNum creature)
