@@ -240,10 +240,7 @@ namespace
 
 namespace MWMechanics
 {
-    static constexpr int GREETING_SHOULD_START = 4; // how many updates should pass before NPC can greet player
-    static constexpr int GREETING_SHOULD_END = 20; // how many updates should pass before NPC stops turning to player
-    static constexpr int GREETING_COOLDOWN = 40; // how many updates should pass before NPC can continue movement
-    static constexpr float DECELERATE_DISTANCE = 512.f;
+    static constexpr float sUpdateHelloInterval = 0.25f; // How often (in seconds) can the greeting state update
 
     namespace
     {
@@ -467,9 +464,10 @@ namespace MWMechanics
             const osg::Vec3f actorPos = actor.getRefData().getPosition().asVec3();
             const float distance = (targetPos - actorPos).length();
 
-            if (distance < DECELERATE_DISTANCE)
+            constexpr float decelerateDist = 512.f;
+            if (distance < decelerateDist)
             {
-                const float speedCoef = std::max(0.7f, 0.2f + 0.8f * distance / DECELERATE_DISTANCE);
+                const float speedCoef = std::max(0.7f, 0.2f + 0.8f * distance / decelerateDist);
                 auto& movement = actorClass.getMovementSettings(actor);
                 movement.mPosition[0] *= speedCoef;
                 movement.mPosition[1] *= speedCoef;
@@ -497,10 +495,11 @@ namespace MWMechanics
             return;
         }
 
-        const MWWorld::Ptr player = getPlayer();
-        const osg::Vec3f playerPos(player.getRefData().getPosition().asVec3());
-        const osg::Vec3f actorPos(actor.getRefData().getPosition().asVec3());
-        const osg::Vec3f dir = playerPos - actorPos;
+        // Morrowind plays idle2 non-stop when the actor is greeting the player.
+        // It should finish naturally when the greeting ends.
+        GreetingState greetingState = actorState.getGreetingState();
+        if (greetingState == GreetingState::InProgress && !checkAnimationPlaying(actor, "idle2"))
+            playAnimationGroup(actor, "idle2", 0, 1);
 
         if (actorState.isTurningToPlayer())
         {
@@ -510,8 +509,6 @@ namespace MWMechanics
             if (zTurn(actor, actorState.getAngleToPlayer(), osg::DegreesToRadians(5.f)))
             {
                 actorState.setTurningToPlayer(false);
-                // An original engine launches an endless idle2 when an actor greets player.
-                playAnimationGroup(actor, "idle2", 0, std::numeric_limits<int>::max(), false);
             }
         }
 
@@ -519,27 +516,31 @@ namespace MWMechanics
             return;
 
         // Play a random voice greeting if the player gets too close
-        static const int iGreetDistanceMultiplier = MWBase::Environment::get()
-                                                        .getESMStore()
-                                                        ->get<ESM::GameSetting>()
-                                                        .find("iGreetDistanceMultiplier")
-                                                        ->mValue.getInteger();
+        const auto& gmst = MWBase::Environment::get().getESMStore()->get<ESM::GameSetting>();
+        static const int iGreetDistanceMultiplier = gmst.find("iGreetDistanceMultiplier")->mValue.getInteger();
+        static const int iGreetDuration = gmst.find("iGreetDuration")->mValue.getInteger();
+        static const float fGreetDistanceReset = gmst.find("fGreetDistanceReset")->mValue.getFloat();
 
         const float helloDistance
             = static_cast<float>(actorStats.getAiSetting(AiSetting::Hello).getModified() * iGreetDistanceMultiplier);
-        const auto& playerStats = player.getClass().getCreatureStats(player);
+
+        const MWWorld::Ptr player = getPlayer();
+        const osg::Vec3f playerPos(player.getRefData().getPosition().asVec3());
+        const osg::Vec3f actorPos(actor.getRefData().getPosition().asVec3());
+        const osg::Vec3f dir = playerPos - actorPos;
+        const float distSquared = dir.length2();
 
         int greetingTimer = actorState.getGreetingTimer();
-        GreetingState greetingState = actorState.getGreetingState();
         if (greetingState == GreetingState::None)
         {
-            if ((playerPos - actorPos).length2() <= helloDistance * helloDistance && !playerStats.isDead()
-                && !actorStats.isParalyzed() && !isTargetMagicallyHidden(player)
-                && MWBase::Environment::get().getWorld()->getLOS(player, actor)
+            const CreatureStats& playerStats = player.getClass().getCreatureStats(player);
+            if (distSquared <= helloDistance * helloDistance && !playerStats.isDead() && !actorStats.isParalyzed()
+                && !isTargetMagicallyHidden(player) && MWBase::Environment::get().getWorld()->getLOS(player, actor)
                 && MWBase::Environment::get().getMechanicsManager()->awarenessCheck(player, actor))
                 greetingTimer++;
 
-            if (greetingTimer >= GREETING_SHOULD_START)
+            constexpr int initialDelay = 2;
+            if (greetingTimer >= initialDelay)
             {
                 greetingState = GreetingState::InProgress;
                 if (!MWBase::Environment::get().getDialogueManager()->say(actor, ESM::RefId::stringRefId("hello")))
@@ -552,24 +553,20 @@ namespace MWMechanics
         {
             greetingTimer++;
 
-            if (!actorStats.getMovementFlag(CreatureStats::Flag_ForceJump)
-                && !actorStats.getMovementFlag(CreatureStats::Flag_ForceSneak)
-                && (greetingTimer <= GREETING_SHOULD_END
-                    || MWBase::Environment::get().getSoundManager()->sayActive(actor)))
+            static const int greetDuration = static_cast<int>(iGreetDuration / sUpdateHelloInterval);
+            if (greetingTimer <= greetDuration)
                 turnActorToFacePlayer(actor, actorState, dir);
-
-            if (greetingTimer >= GREETING_COOLDOWN)
+            else
             {
                 greetingState = GreetingState::Done;
                 greetingTimer = 0;
             }
         }
 
-        if (greetingState == GreetingState::Done)
+        if (greetingState != GreetingState::None && distSquared >= fGreetDistanceReset * fGreetDistanceReset)
         {
-            float resetDist = 2 * helloDistance;
-            if ((playerPos - actorPos).length2() >= resetDist * resetDist)
-                greetingState = GreetingState::None;
+            greetingState = GreetingState::None;
+            greetingTimer = 0;
         }
 
         actorState.setGreetingTimer(greetingTimer);
@@ -578,6 +575,11 @@ namespace MWMechanics
 
     void Actors::turnActorToFacePlayer(const MWWorld::Ptr& actor, Actor& actorState, const osg::Vec3f& dir) const
     {
+        const CreatureStats& stats = actor.getClass().getCreatureStats(actor);
+        if (stats.getMovementFlag(CreatureStats::Flag_ForceJump)
+            || stats.getMovementFlag(CreatureStats::Flag_ForceSneak))
+            return;
+
         auto& movementSettings = actor.getClass().getMovementSettings(actor);
         movementSettings.mPosition[1] = 0;
         movementSettings.mPosition[0] = 0;
@@ -1501,7 +1503,7 @@ namespace MWMechanics
             if (mTimerUpdateHeadTrack >= 0.3f)
                 mTimerUpdateHeadTrack = 0;
 
-            if (mTimerUpdateHello >= 0.25f)
+            if (mTimerUpdateHello >= sUpdateHelloInterval)
                 mTimerUpdateHello = 0;
 
             if (mTimerDisposeSummonsCorpses >= 0.2f)
@@ -2383,15 +2385,6 @@ namespace MWMechanics
             return GreetingState::None;
 
         return it->second->getGreetingState();
-    }
-
-    bool Actors::isTurningToPlayer(const MWWorld::Ptr& ptr) const
-    {
-        const auto it = mIndex.find(ptr.mRef);
-        if (it == mIndex.end())
-            return false;
-
-        return it->second->isTurningToPlayer();
     }
 
     void Actors::fastForwardAi() const

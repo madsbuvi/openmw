@@ -241,7 +241,6 @@ namespace MWMechanics
         int getGreetingTimer(const MWWorld::Ptr& ptr) const override;
         float getAngleToPlayer(const MWWorld::Ptr& ptr) const override;
         GreetingState getGreetingState(const MWWorld::Ptr& ptr) const override;
-        bool isTurningToPlayer(const MWWorld::Ptr& ptr) const override;
         void fastForwardAi() const override;
 
     private:

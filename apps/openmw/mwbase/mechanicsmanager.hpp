@@ -308,7 +308,6 @@ namespace MWBase
         virtual int getGreetingTimer(const MWWorld::Ptr& ptr) const = 0;
         virtual float getAngleToPlayer(const MWWorld::Ptr& ptr) const = 0;
         virtual MWMechanics::GreetingState getGreetingState(const MWWorld::Ptr& ptr) const = 0;
-        virtual bool isTurningToPlayer(const MWWorld::Ptr& ptr) const = 0;
         virtual void fastForwardAi() const = 0;
     };
 }
