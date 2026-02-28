@@ -18,7 +18,6 @@
 #include "../mwbase/environment.hpp"
 #include "../mwbase/inputmanager.hpp"
 #include "../mwbase/windowmanager.hpp"
-#include "../mwvr/vrgui.hpp"
 #include <MyGUI_InputManager.h>
 
 namespace MWLua
@@ -100,13 +99,7 @@ namespace MWLua
 
         api["create"] = [luaManager = context.mLuaManager, menu](const sol::table& layout) {
             auto element = LuaUi::Element::make(layout, menu);
-            luaManager->addAction(
-                [element] {
-                    element->create();
-                    if (VR::getVR())
-                        MWVR::VRGUIManager::instance().registerLuaElement(element.get());
-                },
-                "Create UI");
+            luaManager->addAction([element] { element->create(); }, "Create UI");
             return element;
         };
 
@@ -117,13 +110,7 @@ namespace MWLua
             });
             luaManager->addAction(
                 [menu]() {
-                    LuaUi::Element::forEach(menu, [](LuaUi::Element* e) {
-                        if (VR::getVR())
-                            MWVR::VRGUIManager::instance().deregisterLuaElement(e);
-                        e->update();
-                        if (VR::getVR())
-                            MWVR::VRGUIManager::instance().registerLuaElement(e);
-                    });
+                    LuaUi::Element::forEach(menu, [](LuaUi::Element* e) { e->update(); });
                 },
                 "Update all menu UI elements");
         };
@@ -311,28 +298,14 @@ namespace MWLua
             uiElement["update"] = [luaManager = context.mLuaManager](const std::shared_ptr<LuaUi::Element>& element) {
                 if (element->mState != LuaUi::Element::Created)
                     return;
+                luaManager->addAction([element] { element->update(); }, "Update UI");
                 element->mState = LuaUi::Element::Update;
-                luaManager->addAction(
-                    [element] {
-                        if (VR::getVR())
-                            MWVR::VRGUIManager::instance().deregisterLuaElement(element.get());
-                        element->update();
-                        if (VR::getVR())
-                            MWVR::VRGUIManager::instance().registerLuaElement(element.get());
-                    },
-                    "Update UI");
             };
             uiElement["destroy"] = [luaManager = context.mLuaManager](const std::shared_ptr<LuaUi::Element>& element) {
                 if (element->mState == LuaUi::Element::Destroyed)
                     return;
+                luaManager->addAction([element] { LuaUi::Element::erase(element.get()); }, "Destroy UI");
                 element->mState = LuaUi::Element::Destroy;
-                luaManager->addAction(
-                    [element] {
-                        if (VR::getVR())
-                            MWVR::VRGUIManager::instance().deregisterLuaElement(element.get());
-                        LuaUi::Element::erase(element.get());
-                    },
-                    "Destroy UI");
             };
 
             auto uiLayer = context.sol().new_usertype<LuaUi::Layer>("UiLayer");

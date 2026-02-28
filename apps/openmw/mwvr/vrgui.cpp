@@ -722,11 +722,20 @@ namespace MWVR
         mGUICameras->setNodeMask(MWRender::VisMask::Mask_3DGUI);
         mRootNode->addChild(mGUICameras);
 
+        LuaUi::Element::sAfterCreate = [](LuaUi::Element* element) { instance().registerLuaElement(element); };
+        LuaUi::Element::sBeforeUpdate = [](LuaUi::Element* element) { instance().deregisterLuaElement(element); };
+        LuaUi::Element::sAfterUpdate = [](LuaUi::Element* element) { instance().registerLuaElement(element); };
+        LuaUi::Element::sBeforeDestroy = [](LuaUi::Element* element) { instance().deregisterLuaElement(element); };
+
         readConfig();
     }
 
     VRGUIManager::~VRGUIManager(void)
     {
+        LuaUi::Element::sAfterCreate = nullptr;
+        LuaUi::Element::sBeforeUpdate = nullptr;
+        LuaUi::Element::sAfterUpdate = nullptr;
+        LuaUi::Element::sBeforeDestroy = nullptr;
         sManager = nullptr;
     }
 

@@ -8,6 +8,13 @@
 
 namespace LuaUi
 {
+    //## VR_PATCH BEGIN
+    Element::LifecycleHook Element::sAfterCreate = nullptr;
+    Element::LifecycleHook Element::sBeforeUpdate = nullptr;
+    Element::LifecycleHook Element::sAfterUpdate = nullptr;
+    Element::LifecycleHook Element::sBeforeDestroy = nullptr;
+    //## VR_PATCH END
+
     namespace
     {
         namespace LayoutKeys
@@ -274,10 +281,18 @@ namespace LuaUi
             updateRootCoord(mRoot);
             mState = Created;
         }
+        //## VR_PATCH BEGIN
+        if (sAfterCreate)
+            sAfterCreate(this);
+        //## VR_PATCH END
     }
 
     void Element::update()
     {
+        //## VR_PATCH BEGIN
+        if (sBeforeUpdate)
+            sBeforeUpdate(this);
+        //## VR_PATCH END
         if (mState == Update)
         {
             assert(mRoot);
@@ -313,10 +328,18 @@ namespace LuaUi
             updateRootCoord(mRoot);
             mState = Created;
         }
+        //## VR_PATCH BEGIN
+        if (sAfterUpdate)
+            sAfterUpdate(this);
+        //## VR_PATCH END
     }
 
     void Element::destroy()
     {
+        //## VR_PATCH BEGIN
+        if (sBeforeDestroy)
+            sBeforeDestroy(this);
+        //## VR_PATCH END
         if (mState != Destroyed)
         {
             if (mRoot != nullptr)

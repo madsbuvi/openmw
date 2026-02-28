@@ -38,6 +38,15 @@ namespace LuaUi
 
         void destroy();
 
+        //## VR_PATCH BEGIN
+        // Optional lifecycle hooks so VR can track Lua UI without patching mwlua/uibindings.cpp.
+        using LifecycleHook = void (*)(Element*);
+        static LifecycleHook sAfterCreate;
+        static LifecycleHook sBeforeUpdate;
+        static LifecycleHook sAfterUpdate;
+        static LifecycleHook sBeforeDestroy;
+        //## VR_PATCH END
+
         friend void clearGameInterface();
         friend void clearMenuInterface();
 
