@@ -94,6 +94,11 @@ namespace MWLua
         {
             callEngineHandlers(mOnPlayAnimationHandlers, groupname, options);
         }
+        void onAnimationEnded(std::string_view groupname, std::string_view startKey, std::string_view stopKey,
+            float time, float completion)
+        {
+            callEngineHandlers(mOnAnimationEndedHandlers, groupname, startKey, stopKey, time, completion);
+        }
         void onSkillUse(std::string_view skillId, int useType, float scale)
         {
             callEngineHandlers(mOnSkillUse, skillId, useType, scale);
@@ -130,6 +135,7 @@ namespace MWLua
         EngineHandlerList mOnTeleportedHandlers{ "onTeleported" };
         EngineHandlerList mOnAnimationTextKeyHandlers{ "_onAnimationTextKey" };
         EngineHandlerList mOnPlayAnimationHandlers{ "_onPlayAnimation" };
+        EngineHandlerList mOnAnimationEndedHandlers{ "_onAnimationEnded" };
         EngineHandlerList mOnSkillUse{ "_onSkillUse" };
         EngineHandlerList mOnSkillLevelUp{ "_onSkillLevelUp" };
         EngineHandlerList mOnJailTimeServed{ "_onJailTimeServed" };

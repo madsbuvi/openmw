@@ -545,6 +545,13 @@ namespace MWLua
         });
     }
 
+    void LuaManager::animationEnded(const MWWorld::Ptr& actor, std::string_view groupname, float time, float completion,
+        std::string_view startKey, std::string_view stopKey)
+    {
+        mEngineEvents.addToQueue(EngineEvents::OnAnimationEnded{
+            getId(actor), std::string(groupname), std::string(startKey), std::string(stopKey), time, completion });
+    }
+
     void LuaManager::skillUse(const MWWorld::Ptr& actor, ESM::RefId skillId, int useType, float scale)
     {
         mEngineEvents.addToQueue(EngineEvents::OnSkillUse{ getId(actor), skillId.serializeText(), useType, scale });

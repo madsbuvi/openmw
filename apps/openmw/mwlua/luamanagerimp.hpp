@@ -91,6 +91,8 @@ namespace MWLua
             const MWRender::AnimPriority& priority, int blendMask, bool autodisable, float speedmult,
             std::string_view start, std::string_view stop, float startpoint, uint32_t loops,
             bool loopfallback) override;
+        void animationEnded(const MWWorld::Ptr& actor, std::string_view groupname, float time, float completion,
+            std::string_view startKey, std::string_view stopKey) override;
         void skillUse(const MWWorld::Ptr& actor, ESM::RefId skillId, int useType, float scale) override;
         void skillLevelUp(const MWWorld::Ptr& actor, ESM::RefId skillId, std::string_view source) override;
         void jailTimeServed(const MWWorld::Ptr& actor, int days) override;

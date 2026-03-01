@@ -78,6 +78,9 @@ namespace MWBase
             const MWRender::AnimPriority& priority, int blendMask, bool autodisable, float speedmult,
             std::string_view start, std::string_view stop, float startpoint, uint32_t loops, bool loopfallback)
             = 0;
+        virtual void animationEnded(const MWWorld::Ptr& actor, std::string_view groupname, float time, float completion,
+            std::string_view startKey, std::string_view stopKey)
+            = 0;
         virtual void jailTimeServed(const MWWorld::Ptr& actor, int days) = 0;
         virtual void skillLevelUp(const MWWorld::Ptr& actor, ESM::RefId skillId, std::string_view source) = 0;
         virtual void skillUse(const MWWorld::Ptr& actor, ESM::RefId skillId, int useType, float scale) = 0;
