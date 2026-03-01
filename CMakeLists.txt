@@ -656,6 +656,14 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" OR CMAKE_CXX_COMPILER_FRONTEND_VARIANT
         add_compile_options("/wd${d}")
     endforeach(d)
 
+    set(WARNINGS_EXTRA
+        4855 # implicit capture of 'this' via '[=]' is deprecated in 'version'
+        )
+
+    foreach(d ${WARNINGS_EXTRA})
+        add_compile_options("/w1${d}")
+    endforeach(d)
+
     if(OPENMW_MSVC_WERROR)
         add_compile_options("/WX")
     endif()
