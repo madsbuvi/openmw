@@ -929,7 +929,9 @@ void OMW::Engine::prepareEngine()
     // ## VR_PATCH BEGIN
     // In VR, the MWRender::Camera object needs to be created right away to apply tracking updates even before the scene and
     // RenderingManager has been created.
-    auto camera = std::make_unique<MWRender::Camera>(mViewer->getCamera());
+    std::unique_ptr<MWRender::Camera> camera;
+    if (VR::getVR())
+        camera = std::make_unique<MWRender::Camera>(mViewer->getCamera());
     // ## VR_PATCH END
     //  Create the world
     mWorld = std::make_unique<MWWorld::World>(
@@ -937,39 +939,6 @@ void OMW::Engine::prepareEngine()
     mEnvironment.setWorld(*mWorld);
     mEnvironment.setWorldModel(mWorld->getWorldModel());
     mEnvironment.setESMStore(mWorld->getStore());
-
-    Loading::Listener* listener = MWBase::Environment::get().getWindowManager()->getLoadingScreen();
-    Loading::AsyncListener asyncListener(*listener);
-    auto dataLoading = std::async(std::launch::async,
-        [&] { mWorld->loadData(mFileCollections, mContentFiles, mGroundcoverFiles, mEncoder.get(), &asyncListener); });
-
-    if (!mSkipMenu)
-    {
-        std::string_view logo = Fallback::Map::getString("Movies_Company_Logo");
-        if (!logo.empty())
-            mWindowManager->playVideo(logo, true);
-    }
-
-    listener->loadingOn();
-    {
-        using namespace std::chrono_literals;
-        while (dataLoading.wait_for(50ms) != std::future_status::ready)
-            asyncListener.update();
-        dataLoading.get();
-    }
-    listener->loadingOff();
-
-    mWorld->init(mMaxRecastLogLevel, mViewer, std::move(rootNode), mWorkQueue.get(), *mUnrefQueue, std::move(camera));
-    mEnvironment.setWorldScene(mWorld->getWorldScene());
-    mWorld->setupPlayer();
-    mWorld->setRandomSeed(mRandomSeed);
-
-    // ## VR_PATCH BEGIN
-    if (VR::getVR())
-    {
-        configureVRScene();
-    }
-    // ## VR_PATCH END
 
     const MWWorld::Store<ESM::GameSetting>* gmst = &mWorld->getStore().get<ESM::GameSetting>();
     mL10nManager->setGmstLoader([gmst, misses = std::set<std::string, Misc::StringUtils::CiComp>()](
@@ -983,7 +952,6 @@ void OMW::Engine::prepareEngine()
     });
 
     mWindowManager->setStore(mWorld->getStore());
-    mWindowManager->initUI();
 
     // Load translation data
     mTranslationDataStorage.setEncoder(mEncoder.get());
@@ -1010,6 +978,43 @@ void OMW::Engine::prepareEngine()
     mDialogueManager = std::make_unique<MWDialogue::DialogueManager>(mExtensions, mTranslationDataStorage);
     mEnvironment.setDialogueManager(*mDialogueManager);
 
+    mLuaManager->loadPermanentStorage(mCfgMgr.getUserConfigPath());
+    mLuaManager->initPreLoad();
+
+    Loading::Listener* listener = MWBase::Environment::get().getWindowManager()->getLoadingScreen();
+    Loading::AsyncListener asyncListener(*listener);
+    auto dataLoading = std::async(std::launch::async,
+        [&] { mWorld->loadData(mFileCollections, mContentFiles, mGroundcoverFiles, mEncoder.get(), &asyncListener); });
+
+    if (!mSkipMenu)
+    {
+        std::string_view logo = Fallback::Map::getString("Movies_Company_Logo");
+        if (!logo.empty())
+            mWindowManager->playVideo(logo, true);
+    }
+
+    listener->loadingOn();
+    {
+        using namespace std::chrono_literals;
+        while (dataLoading.wait_for(50ms) != std::future_status::ready)
+            asyncListener.update();
+        dataLoading.get();
+    }
+    listener->loadingOff();
+
+    // ## VR_PATCH BEGIN
+    mWorld->init(mMaxRecastLogLevel, mViewer, std::move(rootNode), mWorkQueue.get(), *mUnrefQueue, std::move(camera));
+    // ## VR_PATCH END
+    mEnvironment.setWorldScene(mWorld->getWorldScene());
+    mWorld->setupPlayer();
+    mWorld->setRandomSeed(mRandomSeed);
+    // ## VR_PATCH BEGIN
+    if (VR::getVR())
+        configureVRScene();
+    // ## VR_PATCH END
+    mWindowManager->initUI();
+    mLuaManager->initPostLoad();
+
     // scripts
     if (mCompileAll)
     {
@@ -1025,9 +1030,6 @@ void OMW::Engine::prepareEngine()
             Log(Debug::Info) << "compiled " << result.second << " of " << result.first << " dialogue scripts ("
                              << 100 * static_cast<double>(result.second) / result.first << "%)";
     }
-
-    mLuaManager->loadPermanentStorage(mCfgMgr.getUserConfigPath());
-    mLuaManager->init();
 
     // starts a separate lua thread if "lua num threads" > 0
     mLuaWorker = std::make_unique<MWLua::Worker>(*mLuaManager);

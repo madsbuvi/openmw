@@ -207,7 +207,10 @@ namespace MWWorld
 
         // Must be called after `loadData`.
         void init(Debug::Level maxRecastLogLevel, osgViewer::Viewer* viewer, osg::ref_ptr<osg::Group> rootNode,
-            SceneUtil::WorkQueue* workQueue, SceneUtil::UnrefQueue& unrefQueue, std::unique_ptr<MWRender::Camera> camera);
+            SceneUtil::WorkQueue* workQueue, SceneUtil::UnrefQueue& unrefQueue,
+            //## VR_PATCH BEGIN
+            std::unique_ptr<MWRender::Camera> camera = {});
+            //## VR_PATCH END
 
         virtual ~World();
 
