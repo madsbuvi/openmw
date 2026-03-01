@@ -554,8 +554,8 @@ Ubuntu_Clang_tests_Debug:
   rules:
     - if: $CI_PROJECT_ID != "7107382"
       when: never
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-      when: manual
+    # Merge request event rule is architecture-specific
+    # Unlike ARM64, AMD64 job is manual non-blocking as it's seldom useful
     - if: $CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "schedule"
   image: macos-15-xcode-16
   tags:
@@ -594,6 +594,11 @@ Ubuntu_Clang_tests_Debug:
 
 .macOS15_Xcode16_amd64:
   extends: .MacOS
+  rules:
+    - !reference [.MacOS, rules]
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: manual
+      allow_failure: true
   cache:
     key:
       prefix: macOS15_Xcode16_amd64.v3
@@ -611,6 +616,9 @@ Ubuntu_Clang_tests_Debug:
 
 .macOS15_Xcode16_arm64:
   extends: .MacOS
+  rules:
+    - !reference [.MacOS, rules]
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
   cache:
     key:
       prefix: macOS15_Xcode16_arm64.v3
