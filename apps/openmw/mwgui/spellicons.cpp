@@ -1,6 +1,7 @@
 #include "spellicons.hpp"
 
 #include <iomanip>
+#include <set>
 #include <sstream>
 #include <vector>
 
@@ -93,7 +94,6 @@ namespace MWGui
     {
         for (auto& [effectId, widget] : mWidgetMap)
         {
-            widget->setVisible(false);
             widget->setAlpha(1.f);
             widget->getUserData<ToolTipInfo>()->text.clear();
         }
@@ -107,6 +107,8 @@ namespace MWGui
 
         const MWWorld::ESMStore& store = *MWBase::Environment::get().getESMStore();
         static const float fadeTime = store.get<ESM::GameSetting>().find("fMagicStartIconBlink")->mValue.getFloat();
+
+        std::set<ESM::RefId> activeEffects;
 
         const MWWorld::Ptr player = MWMechanics::getPlayer();
         const MWMechanics::CreatureStats& stats = player.getClass().getCreatureStats(player);
@@ -127,7 +129,7 @@ namespace MWGui
                     mWidgetMap[effectId] = createIcon(*parent, effect.mName, effect.mIcon, size);
 
                 MyGUI::ImageBox& widget = *mWidgetMap[effectId];
-                if (!widget.getVisible())
+                if (activeEffects.emplace(effectId).second)
                 {
                     widget.setPosition(horizontalOffset, verticalOffset);
                     widget.setVisible(true);
@@ -183,6 +185,12 @@ namespace MWGui
             if (!VR::getVR())
 //## VR_PATCH END
                 parent->setPosition(parent->getLeft() + diff, parent->getTop());
+        }
+
+        for (auto& [effectId, widget] : mWidgetMap)
+        {
+            if (!activeEffects.contains(effectId))
+                widget->setVisible(false);
         }
     }
 }
