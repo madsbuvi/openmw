@@ -75,9 +75,6 @@ namespace
         std::string_view result;
         switch (method)
         {
-            case SceneUtil::LightingMethod::FFP:
-                result = "#{OMWEngine:LightingMethodLegacy}";
-                break;
             case SceneUtil::LightingMethod::PerObjectUniform:
                 result = "#{OMWEngine:LightingMethodShadersCompatibility}";
                 break;
@@ -900,8 +897,7 @@ namespace MWGui
 
         mLightingMethodButton->removeAllItems();
 
-        std::array<SceneUtil::LightingMethod, 3> methods = {
-            SceneUtil::LightingMethod::FFP,
+        std::array<SceneUtil::LightingMethod, 2> methods = {
             SceneUtil::LightingMethod::PerObjectUniform,
             SceneUtil::LightingMethod::SingleUBO,
         };

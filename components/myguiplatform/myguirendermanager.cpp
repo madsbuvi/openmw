@@ -194,6 +194,7 @@ namespace MyGUIPlatform
             collectDrawCalls->setFilter(filter);
             setCullCallback(collectDrawCalls);
 
+            // VR 3D GUI drawables may have no MyGUI RenderManager parent.
             if (mParent)
             {
                 osg::ref_ptr<FrameUpdate> frameUpdate = new FrameUpdate;
@@ -201,6 +202,12 @@ namespace MyGUIPlatform
                 setUpdateCallback(frameUpdate);
             }
 //## VR_PATCH END
+
+            if (!mStateSet)
+                mStateSet = new osg::StateSet;
+            mStateSet->setTextureMode(0, GL_TEXTURE_2D, osg::StateAttribute::ON);
+            mStateSet->setMode(GL_DEPTH_TEST, osg::StateAttribute::OFF);
+            mStateSet->setMode(GL_BLEND, osg::StateAttribute::ON);
 
             mDummyTexture = new osg::Texture2D;
             mDummyTexture->setWrap(osg::Texture::WRAP_S, osg::Texture::CLAMP_TO_EDGE);

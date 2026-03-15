@@ -182,11 +182,11 @@ namespace SceneUtil
 
     struct LightSettings
     {
-        LightingMethod mLightingMethod = LightingMethod::FFP;
-        int mMaxLights = 0;
-        float mMaximumLightDistance = 0;
+        LightingMethod mLightingMethod = LightingMethod::PerObjectUniform;
+        int mMaxLights = 8;
+        float mMaximumLightDistance = 8192;
         float mLightFadeStart = 0;
-        float mLightBoundsMultiplier = 0;
+        float mLightBoundsMultiplier = 1;
     };
 
     /// @brief Decorator node implementing the rendering of any number of LightSources that can be anywhere in the
@@ -264,8 +264,6 @@ namespace SceneUtil
         void setSunlight(osg::ref_ptr<osg::Light> sun);
         osg::ref_ptr<osg::Light> getSunlight();
 
-        bool usingFFP() const;
-
         LightingMethod getLightingMethod() const;
 
         int getMaxLights() const;
@@ -306,7 +304,6 @@ namespace SceneUtil
         ViewDependentData& getViewDependentData(const osgUtil::CullVisitor* cv) const;
 
     private:
-        void initFFP(int targetLights);
         void initPerObjectUniform(int targetLights);
         void initSingleUBO(int targetLights);
 

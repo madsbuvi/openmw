@@ -64,6 +64,9 @@ namespace SceneUtil
     class WorkQueue;
     class LightManager;
     class UnrefQueue;
+    class PerViewUniformStateUpdater;
+    class SharedUniformStateUpdater;
+    class StateUpdater;
 }
 
 namespace DetourNavigator
@@ -86,9 +89,6 @@ namespace Debug
 
 namespace MWRender
 {
-    class StateUpdater;
-    class SharedUniformStateUpdater;
-    class PerViewUniformStateUpdater;
     class IntersectionVisitorWithIgnoreList;
 
     class EffectManager;
@@ -364,9 +364,9 @@ namespace MWRender
         std::unique_ptr<Camera> mCamera;
         osg::ref_ptr<Debug::DebugDrawer> mDebugDraw;
 
-        osg::ref_ptr<StateUpdater> mStateUpdater;
-        osg::ref_ptr<SharedUniformStateUpdater> mSharedUniformStateUpdater;
-        osg::ref_ptr<PerViewUniformStateUpdater> mPerViewUniformStateUpdater;
+        osg::ref_ptr<SceneUtil::StateUpdater> mStateUpdater;
+        osg::ref_ptr<SceneUtil::SharedUniformStateUpdater> mSharedUniformStateUpdater;
+        osg::ref_ptr<SceneUtil::PerViewUniformStateUpdater> mPerViewUniformStateUpdater;
 
         osg::Vec4f mAmbientColor;
         float mNightEyeFactor;
