@@ -2,6 +2,7 @@
 
 #include <MyGUI_Gui.h>
 
+#include "components/settings/values.hpp"
 #include "content.hpp"
 #include "util.hpp"
 #include "widget.hpp"
@@ -27,6 +28,10 @@ namespace LuaUi
             constexpr std::string_view events = "events";
             constexpr std::string_view content = "content";
             constexpr std::string_view external = "external";
+            constexpr std::string_view userData = "userData";
+
+            const std::vector<std::string_view> allKeys
+                = { type, name, layer, templateLayout, props, events, content, external, userData };
         }
 
         const std::string defaultWidgetType = "LuaWidget";
@@ -271,6 +276,11 @@ namespace LuaUi
         sGameElements.erase(element);
     }
 
+    const std::vector<std::string_view>& Element::allLayoutProperties()
+    {
+        return LayoutKeys::allKeys;
+    }
+
     void Element::create(uint64_t depth)
     {
         if (mState == New)
@@ -280,6 +290,7 @@ namespace LuaUi
             mLayer = setLayer(mRoot, layout());
             updateRootCoord(mRoot);
             mState = Created;
+            checkWarnings();
         }
         //## VR_PATCH BEGIN
         if (sAfterCreate)
@@ -327,6 +338,7 @@ namespace LuaUi
             mLayer = setLayer(mRoot, layout());
             updateRootCoord(mRoot);
             mState = Created;
+            checkWarnings();
         }
         //## VR_PATCH BEGIN
         if (sAfterUpdate)
@@ -354,5 +366,27 @@ namespace LuaUi
             mLayout.reset();
         }
         mState = Destroyed;
+    }
+
+    void Element::checkWarnings()
+    {
+        if (Settings::lua().mLuaDebug)
+        {
+            assert(mRoot);
+            WidgetExtension::Warnings warnings;
+            mRoot->collectWarnings(warnings, 0, true);
+            for (const auto& warning : warnings)
+                Log(Debug::Warning) << warning;
+        }
+        else if (!mWarnedOnce)
+        {
+            mWarnedOnce = true;
+            WidgetExtension::Warnings dummy;
+            if (mRoot->collectWarnings(dummy, 0, false))
+            {
+                Log(Debug::Warning) << "Warning generated while parsing layouts of a(n) " + mRoot->diagnosticName() + ". Set 'lua "
+                                       "debug=true' in the [Lua] section of settings.cfg to enable detailed warnings.";
+            }
+        }
     }
 }
