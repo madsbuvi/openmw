@@ -209,8 +209,8 @@ namespace MWLua
         LoadScripts mLoadScripts{ &mLua };
         MenuScripts mMenuScripts{ &mLua };
         GlobalScripts mGlobalScripts{ &mLua };
-        std::set<LocalScripts*> mActiveLocalScripts;
-        std::vector<LocalScripts*> mQueuedAutoStartedScripts;
+        std::set<LuaUtil::ScriptsContainerWeakPtr, std::less<>> mActiveLocalScripts;
+        std::vector<LuaUtil::ScriptsContainerWeakPtr> mQueuedAutoStartedScripts;
         ObjectLists mObjectLists;
 
         MWWorld::Ptr mPlayer;
