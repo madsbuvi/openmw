@@ -2234,6 +2234,9 @@ namespace MWGui
 
         mVideoBackground->setVisible(true);
 
+        if (mInputBlocker)
+            mInputBlocker->setVisible(false);
+
 //## VR_PATCH BEGIN
         if(VR::getVR())
             MWVR::VRGUIManager::instance().setForceLayerVisible(mVideoBackground->getLayer()->getName(), true);
