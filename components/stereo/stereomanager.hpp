@@ -78,16 +78,16 @@ namespace Stereo
         //! @Param enableMultiview whether or not to make use of the GL_OVR_Multiview extension, if supported.
         //! @Param near defines distance to near camera clipping plane from view point.
         //! @Param far defines distance to far camera clipping plane from view point.
-        explicit Manager(osgViewer::Viewer* viewer, bool enableStereo, float near, float far);
+        explicit Manager(osgViewer::Viewer* viewer, bool enableStereo, float nearClip, float farClip);
         ~Manager();
 
         //! Called during update traversal
         void update();
 
-        void updateSettings(float near, float far)
+        void updateSettings(float nearClip, float farClip)
         {
-            mNear = near;
-            mFar = far;
+            mNear = nearClip;
+            mFar = farClip;
         }
 
         //! Initializes all details of stereo if applicable. If the constructor was called with enableMultiview=true,

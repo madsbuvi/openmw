@@ -154,7 +154,7 @@ namespace VR
 
     DirectXWGLInteropPrivate::DirectXWGLInteropPrivate()
     {
-        mD3D11Dll = LoadLibrary("D3D11.dll");
+        mD3D11Dll = LoadLibraryA("D3D11.dll");
 
         if (!mD3D11Dll)
             throw std::runtime_error("Current OpenXR runtime requires DirectX >= 11.0 but D3D11.dll was not found.");

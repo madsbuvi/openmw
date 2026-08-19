@@ -1,3 +1,17 @@
+#ifdef _WIN32
+// CMake defines NOGDI globally (osgAnimation name clash). Undefine it before the
+// first Windows.h include so WGL prototypes from wingdi.h are available.
+#ifdef NOGDI
+#undef NOGDI
+#endif
+#include <Windows.h>
+#include <objbase.h>
+#include <gl/GL.h>
+#ifdef XR_USE_GRAPHICS_API_D3D11
+#include <d3d11_1.h>
+#endif
+#endif
+
 #include <SDL2/SDL_syswm.h>
 #include <components/misc/strings/algorithm.hpp>
 #include <components/misc/strings/lower.hpp>
@@ -10,24 +24,11 @@
 #include "session.hpp"
 #include "swapchain.hpp"
 
-// The OpenXR SDK's platform headers assume we've included platform headers
-#ifdef _WIN32
-#ifdef NOGDI
-#undef NOGDI
-#endif
-#include <Windows.h>
-#include <objbase.h>
-
-#ifdef XR_USE_GRAPHICS_API_D3D11
-#include <d3d11_1.h>
-#endif
-
-#elif __linux__
+#ifdef __linux__
 #include <EGL/egl.h>
 #include <GL/glx.h>
 #undef None
-
-#else
+#elif !defined(_WIN32)
 #error Unsupported platform
 #endif
 

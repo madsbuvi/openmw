@@ -117,15 +117,15 @@ namespace Stereo
         return *sInstance;
     }
 
-    Manager::Manager(osgViewer::Viewer* viewer, bool enableStereo, float near, float far)
+    Manager::Manager(osgViewer::Viewer* viewer, bool enableStereo, float nearClip, float farClip)
         : mViewer(viewer)
         , mMainCamera(mViewer->getCamera())
         , mUpdateCallback(new StereoUpdateCallback(this))
         , mMasterProjectionMatrix(osg::Matrixd::identity())
         , mEyeResolutionOverriden(false)
         , mEyeResolutionOverride(0, 0)
-        , mNear(near)
-        , mFar(far)
+        , mNear(nearClip)
+        , mFar(farClip)
         , mFrustumManager(nullptr)
         , mUpdateViewCallback(nullptr)
     {
