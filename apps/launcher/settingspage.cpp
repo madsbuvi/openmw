@@ -435,6 +435,7 @@ bool Launcher::SettingsPage::loadSettings()
         realisticCombatMaximumSwingSpeedSpinBox->setValue(vr.mRealisticCombatMaximumSwingVelocity);
 
         loadSettingBool(vr.mLeftHandedMode, *leftHandedModeCheckBox);
+        loadSettingBool(vr.mForceKeyboardMouseMode, *forceKeyboardMouseModeCheckBox);
         loadSettingBool(stereo.mMultiview, *useMultiviewCheckBox);
         loadSettingBool(stereo.mAllowDisplayListsForMultiview, *allowDisplayListsCheckBox);
         loadSettingBool(stereo.mSharedShadowMaps, *useSharedShadowMapsCheckBox);
@@ -735,6 +736,7 @@ void Launcher::SettingsPage::saveSettings()
         vr.mRealisticCombatMinimumSwingVelocity.set(minimumSwingSpeed);
         vr.mRealisticCombatMaximumSwingVelocity.set(maximumSwingSpeed);
         saveSettingBool(*leftHandedModeCheckBox, vr.mLeftHandedMode);
+        saveSettingBool(*forceKeyboardMouseModeCheckBox, vr.mForceKeyboardMouseMode);
         saveSettingBool(*useMultiviewCheckBox, stereo.mMultiview);
         saveSettingBool(*allowDisplayListsCheckBox, stereo.mAllowDisplayListsForMultiview);
         saveSettingBool(*useSharedShadowMapsCheckBox, stereo.mSharedShadowMaps);

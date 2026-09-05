@@ -5,6 +5,7 @@
 
 #include <components/debug/debuglog.hpp>
 #include <components/misc/strings/algorithm.hpp>
+#include <components/settings/values.hpp>
 #include <components/xr/debug.hpp>
 #include <components/xr/instance.hpp>
 
@@ -54,6 +55,7 @@ namespace VR
     bool getKBMouseModeActive()
     {
         return !getVR()
+            || Settings::vr().mForceKeyboardMouseMode
             || !(getControllerActive(stringToXrPath("/user/hand/left"))
                 || getControllerActive(stringToXrPath("/user/hand/right")));
     }
